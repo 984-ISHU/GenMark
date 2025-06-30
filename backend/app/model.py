@@ -19,6 +19,7 @@ class GeneratedOutputs(BaseModel):
 # ---------- PROJECT ----------
 class Project(BaseModel):
     user_id: str
+    dataset_id: str
     name: str
     target_audience: str
     output_format: str  # "image", "text", "video"
@@ -42,5 +43,7 @@ class Product(BaseModel):
 # ---------- DATASET ----------
 class Dataset(BaseModel):
     user_id: str
-    project_id: str
     dataset_name: str
+    file_id: str
+    categories: List[str]
+    locations: List[str]
