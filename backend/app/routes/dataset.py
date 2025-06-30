@@ -17,7 +17,6 @@ def dataset_helper(dataset) -> dict:
     return {
         "id": str(dataset["_id"]),
         "user_id": str(dataset["user_id"]),
-        "project_id": str(dataset["project_id"]),
         "dataset_name": dataset["dataset_name"],
     }
 
@@ -59,7 +58,6 @@ async def upload_dataset(
     file: UploadFile = File(...)
 ):
     user_obj_id = to_object_id(user_id, "user_id")
-    project_obj_id = to_object_id(project_id, "project_id")
 
     # Store file in GridFS (async)
     grid_out = await grid_fs.upload_from_stream(
@@ -74,7 +72,6 @@ async def upload_dataset(
     # Create metadata document
     dataset_doc = {
         "user_id": user_obj_id,
-        "project_id": project_obj_id,
         "dataset_name": dataset_name,
         "file_id": file_id
     }
