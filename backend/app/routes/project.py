@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Body, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Body, Form, Request
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
 from bson import ObjectId
+from bson.errors import InvalidId
 from datetime import datetime
 from typing import List
 from app.db import get_database
@@ -32,7 +33,7 @@ async def upsert_generated_output(db, project_id, update_fields):
 # Creation of Project and Product
 @router.post("/create")
 async def create_project_and_product(
-        user_id: str = Form(...),
+    user_id: str = Form(...),
     name: str = Form(...),
     target_audience: str = Form(...),
     output_format: str = Form(...),
@@ -69,7 +70,7 @@ async def create_project_and_product(
 
     # Insert project
     project_doc = {
-        "user_id": user_id,
+        "user_id": ObjectId(user_id),
         "name": name,
         "target_audience": target_audience,
         "output_format": output_format,
@@ -109,6 +110,17 @@ async def create_project_and_product(
     # })
 
     return {"message": "Project and Product created", "project_id": str(project_result.inserted_id)}
+
+@router.get("/all")
+async def get_all_projects(db: AsyncIOMotorDatabase = Depends(get_database)):
+    projects = []
+    async for p in db["Projects"].find():
+        p["_id"] = str(p["_id"])
+
+        projects.append(p)
+
+    return projects
+
 
 
 

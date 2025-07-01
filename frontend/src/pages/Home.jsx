@@ -1,7 +1,14 @@
 import React from "react";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate("/login?redirect=/dashboard");
+  };
+
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans text-gray-800">
       
@@ -13,7 +20,7 @@ const HomePage = () => {
         <p className="text-lg text-white/90 max-w-2xl mb-6">
           Unleash AI-driven campaigns tailored for every audience — effortlessly create emails, social posts, videos, and more.
         </p>
-        <Button className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-8 py-4 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all">
+        <Button className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white px-8 py-4 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all" onClick={handleGetStarted}>
           🚀 Get Started
         </Button>
       </section>
