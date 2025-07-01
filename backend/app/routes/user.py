@@ -109,10 +109,11 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
     if not user or not pwd_context.verify(payload.password, user["password"]):
         raise HTTPException(status_code=400, detail="Invalid username/email or password")
 
-    token = create_access_token(data={"sub": user["username"]})
+    access_token = create_access_token(data={"sub": user["username"]})
+
     response.set_cookie(
         key="access_token", 
-        value=token, 
+        value=access_token, 
         httponly=True, 
         secure=True, 
         samesite="Lax",
@@ -120,10 +121,13 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
     )
 
     return {
-        "message": "Login successful",
-        "username": user["username"],
-        "email": user["email"]
+        "access_token": access_token,
+        "user": {
+            "id": str(user["_id"]),
+            "username": user["username"]
+        }
     }
+
 
 @router.get("/userdetails/by-username")
 async def get_userdetails_by_username(username: str, db: AsyncIOMotorDatabase = Depends(get_database)):

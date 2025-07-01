@@ -1,9 +1,10 @@
 import io
 import pandas as pd
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Request, Depends
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 from typing import List
-from app.db import dataset_collection, grid_fs
+from app.db import dataset_collection, grid_fs, get_database
 from app.model import Dataset
 from bson import ObjectId
 
@@ -110,3 +111,4 @@ async def upload_dataset(
         "file_id": str(file_id),
         "message": "Dataset uploaded successfully"
     }
+

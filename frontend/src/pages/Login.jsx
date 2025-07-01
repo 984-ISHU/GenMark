@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { Eye, EyeOff, Mail, Lock, User, Sparkles, ArrowRight } from "lucide-react";
 
 function Login() {
   const { login } = useAuth();
@@ -10,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,8 @@ function Login() {
   const searchParams = new URLSearchParams(location.search);
   const redirect = searchParams.get("redirect") || "/dashboard";
 
-  const handleAuth = async () => {
+  const handleAuth = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -87,72 +90,178 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
-          {isLogin ? "Login to Your Account" : "Create an Account"}
-        </h2>
-        
-        {!isLogin && (
-          <>
-            <input
-              type="text"
-              placeholder="Username"
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </>
-        )}
-        
-        {isLogin && (
-          <input
-            type="text"
-            placeholder="Username or Email"
-            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-          />
-        )}
-        
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        
-        <button
-          onClick={handleAuth}
-          disabled={loading}
-          className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-        >
-          {loading ? "Please wait..." : isLogin ? "Login" : "Register"}
-        </button>
-        
-        {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
+    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-4 -left-4 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -right-8 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-700"></div>
+        <div className="absolute -bottom-8 left-1/3 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse delay-300"></div>
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 mr-3">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-extrabold text-white tracking-tight">
+              GenMark
+            </h1>
           </div>
-        )}
-        
-        <p className="text-center mt-4 text-gray-600">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            {isLogin ? "Register" : "Login"}
-          </button>
-        </p>
+          <p className="text-white/90 text-lg font-medium">
+            🎯 Personalized Marketing Studio
+          </p>
+        </div>
+
+        {/* Auth Form */}
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+              {isLogin ? "Welcome Back!" : "Join GenMark"}
+            </h2>
+            <p className="text-gray-600">
+              {isLogin 
+                ? "Sign in to continue creating amazing content" 
+                : "Create your account and start building"
+              }
+            </p>
+          </div>
+          
+          <form onSubmit={handleAuth} className="space-y-6">
+            {/* Register fields */}
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Choose a username"
+                    className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+              </>
+            )}
+            
+            {/* Login field */}
+            {isLogin && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Username or Email
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter username or email"
+                  className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  required={isLogin}
+                />
+              </div>
+            )}
+            
+            {/* Password field */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="w-full p-4 pr-12 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+            
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white p-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+            >
+              {loading ? (
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Create Account"}
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+          
+          {/* Error message */}
+          {error && (
+            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              {error}
+            </div>
+          )}
+          
+          {/* Toggle auth mode */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                // Clear form fields when switching
+                setIdentifier("");
+                setUsername("");
+                setEmail("");
+                setPassword("");
+              }}
+              className="mt-2 text-purple-600 hover:text-purple-700 font-semibold text-lg transition-colors hover:underline"
+            >
+              {isLogin ? "Create new account" : "Sign in instead"}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-white/70 text-sm">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </div>
     </div>
   );

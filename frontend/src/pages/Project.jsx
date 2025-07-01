@@ -1,39 +1,78 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-// import AudienceSelector from "@/components/AudienceSelector";
-import { Textarea } from "@/components/ui";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select"; // adjust if needed
-import axios from "axios";
+} from "@/components/ui/select";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/auth/AuthContext";
+
+// API functions - these should match your api.js structure
+const API_BASE_URL = '';
+
+const apiCall = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('access_token');
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// API functions
+const getDatasets = async () => {
+  return apiCall('/api/datasets/');
+};
+
+const createProject = async (formData) => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch(`${API_BASE_URL}/api/project/create`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create project: ${response.statusText}`);
+  }
+
+  return response.json();
+};
 
 const Project = () => {
   const navigate = useNavigate();
+  const { user: contextUser } = useAuth();
   const project_name = localStorage.getItem("ProjectName");
 
-  useEffect(() => {
-    if (project_name === null) {
-      toast.error("Unknown Project", {
-        description: "Please try again.",
-      });
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [datasetsLoading, setDatasetsLoading] = useState(false);
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000); // wait 2 seconds before navigating
-    }
-  }, [project_name, navigate]);
+  // User state
+  const [user, setUser] = useState(null);
 
-  if (project_name === null) return null; // prevent rendering until redirect
-
-  const user_data = localStorage.getItem("user");
-  const user = JSON.parse(user_data);
+  // Form states
   const [customOutputDescription, setCustomOutputDescription] = useState("");
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
@@ -42,24 +81,122 @@ const Project = () => {
   const [productImages, setProductImages] = useState([]);
   const [targetAudience, setTargetAudience] = useState("");
 
+  // Dataset and selection states
   const [datasets, setDatasets] = useState([]);
-  const [selectedDataset, setSelectedDataset] = useState(null);
+  const [selectedDataset, setSelectedDataset] = useState("");
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
+  
+  // Age selection
   const ageOptions = ["ALL", "5-10", "11-18", "19-25", "26-40", "41-60", "60+"];
   const genderOptions = ["male", "female", "both"];
   const [selectedAges, setSelectedAges] = useState([]);
   const isAllSelected = selectedAges.includes("ALL");
 
+  // Initialize user data
+  useEffect(() => {
+    if (contextUser) {
+      const userData = {
+        id: contextUser.id || contextUser.user?.id,
+        username: contextUser.username || contextUser.user?.username || '',
+        email: contextUser.email || contextUser.user?.email || ''
+      };
+      console.log("Context User:", userData);
+      setUser(userData);
+    } else {
+      // Try to get from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const normalizedUser = {
+            id: parsedUser.id || parsedUser.user?.id,
+            username: parsedUser.username || parsedUser.user?.username,
+            email: parsedUser.email || parsedUser.user?.email,
+          };
+          console.log("Normalized user:", normalizedUser);
+          setUser(normalizedUser);
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+          toast.error('Session expired. Please login again.');
+          navigate('/login');
+          return;
+        }
+      } else {
+        toast.error('Please login to continue.');
+        navigate('/login');
+        return;
+      }
+    }
+    setLoading(false);
+  }, [contextUser, navigate]);
+
+  // Check project name and redirect if not found
+  useEffect(() => {
+    if (!loading && project_name === null) {
+      toast.error("Unknown Project", {
+        description: "Please try again.",
+      });
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    }
+  }, [project_name, navigate, loading]);
+
+  // Fetch datasets when component mounts
+  useEffect(() => {
+    const fetchDatasets = async () => {
+      if (!user) return;
+      
+      setDatasetsLoading(true);
+      try {
+        const data = await getDatasets();
+        setDatasets(Array.isArray(data) ? data : data.datasets || []);
+      } catch (error) {
+        console.error("Error fetching datasets:", error);
+        toast.error("Failed to load datasets");
+      } finally {
+        setDatasetsLoading(false);
+      }
+    };
+
+    fetchDatasets();
+  }, [user]);
+
+  // Update categories and locations when dataset changes
+  useEffect(() => {
+    const selected = datasets.find((d) => d.dataset_name === selectedDataset);
+    if (selected) {
+      setCategories(selected.categories || []);
+      setLocations(selected.locations || []);
+      // Reset selections when dataset changes
+      setCategory("");
+      setLocation("");
+    } else {
+      setCategories([]);
+      setLocations([]);
+    }
+  }, [selectedDataset, datasets]);
+
+  // Update target audience when selections change
+  useEffect(() => {
+    const ageStr = isAllSelected ? "ALL Ages" : selectedAges.join(", ");
+    const genderStr = selectedGender || "Not specified";
+    const locationStr = location || "Not specified";
+    const categoryStr = category || "Not specified";
+
+    const combined = `Category: ${categoryStr} | Location: ${locationStr} | Gender: ${genderStr} | Ages: ${ageStr}`;
+    setTargetAudience(combined);
+  }, [category, location, selectedGender, selectedAges, isAllSelected]);
+
+  // Age selection handler
   const toggleAge = (age) => {
     if (age === "ALL") {
-      // Selecting "ALL" clears others and selects only "ALL"
       setSelectedAges((prev) => (prev.includes("ALL") ? [] : ["ALL"]));
     } else {
-      // If "ALL" was selected before, remove it
       setSelectedAges((prev) => {
         const withoutAll = prev.filter((a) => a !== "ALL");
         return withoutAll.includes(age)
@@ -69,110 +206,154 @@ const Project = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchDatasets = async () => {
-      try {
-        const res = await axios.get("/api/datasets/");
-        setDatasets(res.data);
-      } catch (err) {
-        console.error("Error fetching datasets:", err);
-      }
-    };
-    fetchDatasets();
-  }, []);
-
-  useEffect(() => {
-    const selected = datasets.find((d) => d.dataset_name === selectedDataset);
-    if (selected) {
-      setCategories(selected.categories || []);
-      setLocations(selected.locations || []);
+  // Form validation
+  const validateForm = () => {
+    const errors = [];
+    
+    if (!productName.trim()) errors.push("Product name is required");
+    if (!description.trim()) errors.push("Description is required");
+    if (!price || parseFloat(price) <= 0) errors.push("Valid price is required");
+    if (!discount || parseFloat(discount) < 0 || parseFloat(discount) > 100) {
+      errors.push("Discount must be between 0 and 100");
     }
-  }, [selectedDataset, datasets]);
+    if (!selectedDataset) errors.push("Please select a dataset");
+    if (!category) errors.push("Please select a category");
+    if (!location) errors.push("Please select a location");
+    if (!selectedGender) errors.push("Please select a gender");
+    if (selectedAges.length === 0) errors.push("Please select at least one age range");
+    if (!customOutputDescription.trim()) errors.push("Output format description is required");
+    if (productImages.length === 0) errors.push("Please upload at least one product image");
 
-  useEffect(() => {
-    const ageStr = isAllSelected ? "ALL Ages" : selectedAges.join(", ");
-    const genderStr = selectedGender;
-    const locationStr = location;
-    const categoryStr = category;
+    return errors;
+  };
 
-    const combined = `Category: ${categoryStr} | Location: ${locationStr} | Gender: ${genderStr} | Ages: ${ageStr}`;
-    setTargetAudience(combined);
-  }, [category, location, selectedGender, selectedAges]);
-
+  // Handle project creation
   const handleGenerate = async () => {
-    if (
-      !productName ||
-      !description ||
-      !price ||
-      !discount ||
-      !selectedDataset ||
-      !category ||
-      !location ||
-      !selectedGender ||
-      !customOutputDescription ||
-      productImages.length === 0 ||
-      !targetAudience
-    ) {
-      toast.error("All fields are required");
-      return;
-    }
+  if (!user || !user.id) {
+    toast.error("User not found. Please login again.");
+    navigate('/login');
+    return;
+  }
 
+  console.log("User before project creation:", user); // <--- this should show valid id
+
+  const validationErrors = validateForm();
+
+  if (validationErrors.length > 0) {
+    toast.error("Please fix the following errors:", {
+      description: validationErrors.join(", "),
+    });
+    return;
+  }
+
+  setCreating(true);
+
+  try {
     const formData = new FormData();
-    formData.append("user_id", user.username); // or however you're storing it
+    formData.append("user_id", user.id);
     formData.append("name", project_name);
-    formData.append("target_audience", targetAudience); // from AudienceSelector
+    formData.append("target_audience", targetAudience);
     formData.append("output_format", customOutputDescription);
     formData.append("product_name", productName);
     formData.append("description", description);
     formData.append("price", price);
     formData.append("discount", discount);
+    formData.append("dataset_name", selectedDataset);
+    formData.append("category", category);
+    formData.append("location", location);
+    formData.append("gender", selectedGender);
+    formData.append("ages", selectedAges.join(","));
 
     productImages.forEach((file) => {
       formData.append("product_images", file);
     });
 
-    try {
-      const response = await fetch("/api/project/create", {
-        method: "POST",
-        body: formData,
-      });
+    const response = await createProject(formData);
 
-      if (!response.ok) throw new Error("Failed to create project");
+    toast.success("Project created successfully!", {
+      description: "Your marketing content is being generated.",
+    });
 
-      const data = await response.json();
-      toast.success("Project created successfully!");
-      console.log(data); // maybe store project_id?
-    } catch (error) {
-      toast.error("Error creating project", {
-        description: error.message,
-      });
+    console.log("Project created:", response);
+
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1500);
+  } catch (error) {
+    console.error("Error creating project:", error);
+    toast.error("Failed to create project", {
+      description: error.message || "Please try again.",
+    });
+  } finally {
+    setCreating(false);
+  }
+};
+
+
+  // Handle file upload
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => {
+      const isValid = file.type.startsWith('image/');
+      if (!isValid) {
+        toast.error(`${file.name} is not a valid image file`);
+      }
+      return isValid;
+    });
+    
+    setProductImages(validFiles);
+    
+    if (validFiles.length > 0) {
+      toast.success(`${validFiles.length} image(s) uploaded successfully`);
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 flex items-center justify-center">
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-center">Loading Project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent rendering if no project name
+  if (project_name === null) return null;
+
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans p-6 overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between mb-10">
         <div>
           <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
             GenMark
           </h1>
-          <p className="text-font-bold mt-1 ">
-            🎯Personalized Marketing Studio
+          <p className="text-font-bold mt-1">
+            🎯 Personalized Marketing Studio
+          </p>
+          <p className="text-purple-600 font-medium mt-2">
+            Project: {project_name}
           </p>
         </div>
         <div>
           <button
-            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
+            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
             onClick={() => {
               localStorage.removeItem("ProjectName");
               navigate("/dashboard");
             }}
           >
-            🧠 Back to Dashboard
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
           </button>
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Product Details Card */}
         <Card className="bg-white/80 backdrop-blur-lg border border-purple-200 shadow-2xl hover:shadow-purple-300 transition-shadow duration-300 rounded-2xl p-6">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-purple-700 flex items-center justify-center gap-2">
@@ -187,7 +368,7 @@ const Project = () => {
             {/* Product Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name
+                Product Name *
               </label>
               <input
                 type="text"
@@ -198,30 +379,34 @@ const Project = () => {
               />
             </div>
 
+            {/* Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price
+                Price *
               </label>
               <input
                 type="number"
-                placeholder="$"
+                placeholder="Enter price"
                 value={price}
-                className="no-spinner w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                min="0"
+                step="0.01"
+                className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 onChange={(e) => setPrice(e.target.value)}
               />
             </div>
 
+            {/* Discount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Discount
+                Discount (%) *
               </label>
               <input
                 type="number"
-                placeholder="%"
+                placeholder="Enter discount percentage"
                 min="0"
                 max="100"
                 value={discount}
-                className="no-spinner w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 onChange={(e) => {
                   const value = Number(e.target.value);
                   if (value >= 0 && value <= 100) {
@@ -236,10 +421,10 @@ const Project = () => {
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+                Description *
               </label>
               <textarea
-                placeholder="Write a short description..."
+                placeholder="Write a detailed description of your product..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
@@ -250,24 +435,30 @@ const Project = () => {
             {/* File Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Images
+                Upload Product Images *
               </label>
               <input
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={(e) => setProductImages(Array.from(e.target.files))}
+                onChange={handleFileUpload}
                 className="block w-full text-sm text-gray-600
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:bg-gradient-to-r file:from-purple-500 file:to-pink-500
-          file:text-white hover:file:from-purple-600 hover:file:to-pink-600
-          file:transition-all file:duration-200"
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:bg-gradient-to-r file:from-purple-500 file:to-pink-500
+                file:text-white hover:file:from-purple-600 hover:file:to-pink-600
+                file:transition-all file:duration-200"
               />
+              {productImages.length > 0 && (
+                <p className="text-sm text-green-600 mt-2">
+                  {productImages.length} image(s) selected
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
 
+        {/* Target Audience Card */}
         <Card className="bg-white/70 backdrop-blur-sm border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-6 space-y-6">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-purple-600">
@@ -276,29 +467,36 @@ const Project = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Dataset */}
+            {/* Dataset Selection */}
             <div>
               <h3 className="text-lg font-semibold text-orange-600 mb-1">
-                📊 Choose Dataset
+                📊 Choose Dataset *
               </h3>
-              <Select onValueChange={(value) => setSelectedDataset(value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a dataset" />
-                </SelectTrigger>
-                <SelectContent>
-                  {datasets.map((ds) => (
-                    <SelectItem key={ds.dataset_name} value={ds.dataset_name}>
-                      {ds.dataset_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {datasetsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+                  <span className="ml-2 text-gray-600">Loading datasets...</span>
+                </div>
+              ) : (
+                <Select onValueChange={(value) => setSelectedDataset(value)} value={selectedDataset}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a dataset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasets.map((ds) => (
+                      <SelectItem key={ds.dataset_name} value={ds.dataset_name}>
+                        {ds.dataset_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Age Range */}
             <div>
               <h3 className="text-lg font-semibold text-orange-600 mb-2">
-                🔞 Age Range
+                🔞 Age Range *
               </h3>
               <div className="flex flex-wrap gap-2">
                 {ageOptions.map((age) => {
@@ -311,13 +509,13 @@ const Project = () => {
                       onClick={() => toggleAge(age)}
                       disabled={isDisabled}
                       className={`px-4 py-2 rounded-full border transition 
-                ${
-                  isSelected
-                    ? "bg-orange-600 text-white border-orange-600"
-                    : "bg-white text-gray-800 border-gray-300 hover:bg-orange-100"
-                }
-                ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-              `}
+                        ${
+                          isSelected
+                            ? "bg-orange-600 text-white border-orange-600"
+                            : "bg-white text-gray-800 border-gray-300 hover:bg-orange-100"
+                        }
+                        ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                      `}
                     >
                       {age}
                     </button>
@@ -329,11 +527,12 @@ const Project = () => {
             {/* Category */}
             <div>
               <h3 className="text-lg font-semibold text-orange-600 mb-1">
-                📚 Category
+                📚 Category *
               </h3>
               <Select
                 disabled={!selectedDataset || categories.length === 0}
                 onValueChange={setCategory}
+                value={category}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category" />
@@ -351,11 +550,12 @@ const Project = () => {
             {/* Location */}
             <div>
               <h3 className="text-lg font-semibold text-orange-600 mb-1">
-                📍 Location
+                📍 Location *
               </h3>
               <Select
                 disabled={!selectedDataset || locations.length === 0}
                 onValueChange={setLocation}
+                value={location}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select location" />
@@ -373,7 +573,7 @@ const Project = () => {
             {/* Gender */}
             <div>
               <h3 className="text-lg font-semibold text-pink-600 mb-2">
-                👤 Gender
+                👤 Gender *
               </h3>
               <div className="flex flex-wrap gap-2">
                 {genderOptions.map((gender) => (
@@ -381,20 +581,31 @@ const Project = () => {
                     key={gender}
                     onClick={() => setSelectedGender(gender)}
                     className={`px-4 py-2 rounded-full border transition capitalize
-              ${
-                selectedGender === gender
-                  ? "bg-pink-600 text-white border-pink-600"
-                  : "bg-white text-gray-800 border-gray-300 hover:bg-pink-100"
-              }`}
+                      ${
+                        selectedGender === gender
+                          ? "bg-pink-600 text-white border-pink-600"
+                          : "bg-white text-gray-800 border-gray-300 hover:bg-pink-100"
+                      }`}
                   >
                     {gender}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Target Audience Preview */}
+            {targetAudience && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium text-blue-800 mb-1">
+                  Target Audience Preview:
+                </h4>
+                <p className="text-sm text-blue-700">{targetAudience}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Output Format Card */}
         <Card className="bg-white/80 backdrop-blur-md border border-indigo-200 shadow-xl hover:shadow-indigo-300 transition-all duration-300 rounded-2xl">
           <CardHeader className="text-center pb-2 pt-6">
             <CardTitle className="text-2xl font-bold text-indigo-700 flex items-center justify-center gap-3">
@@ -409,37 +620,54 @@ const Project = () => {
           </CardHeader>
 
           <CardContent className="px-6 pb-6">
-            {/* Custom Output Description */}
             <div className="space-y-2">
               <label
                 htmlFor="output-description"
                 className="block text-sm font-medium text-gray-700"
               >
-                💭 Describe your custom output format
+                💭 Describe your custom output format *
               </label>
               <Textarea
                 id="output-description"
                 className="w-full bg-white/90 text-gray-800 p-4 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 transition-all duration-200 shadow-sm placeholder-gray-400"
-                placeholder="e.g., 'A catchy tweet with emojis and a matching image for Gen Z audiences.'"
-                rows={4}
+                placeholder="e.g., 'A catchy social media post with emojis, compelling headline, and call-to-action for Instagram targeting young professionals aged 25-35.'"
+                rows={6}
                 value={customOutputDescription}
                 onChange={(e) => setCustomOutputDescription(e.target.value)}
               />
               <p className="text-xs text-gray-500">
-                Tip: Be specific about tone, format, media, or audience.
+                Tip: Be specific about tone, format, platform, style, and target audience preferences.
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
-      {/* CTA Button */}
+
+      {/* Generate Button */}
       <div className="flex justify-center mt-10">
         <Button
           onClick={handleGenerate}
-          className="text-white px-8 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition"
+          disabled={creating}
+          className="text-white px-12 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all duration-200 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
         >
-          🚀 Generate
+          {creating ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Creating Project...
+            </>
+          ) : (
+            <>
+              🚀 Generate Marketing Content
+            </>
+          )}
         </Button>
+      </div>
+
+      {/* Required Fields Notice */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          * Required fields must be filled before generating content
+        </p>
       </div>
     </div>
   );
