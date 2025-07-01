@@ -46,6 +46,7 @@ async def login_user(payload: LoginPayload, db: AsyncIOMotorDatabase = Depends(g
 
     return {
         "message": "Login successful",
+        "id":  str(user["_id"]),
         "username": user["username"],
         "email": user["email"]
     }

@@ -5,11 +5,31 @@ from bson import ObjectId
 from datetime import datetime
 from typing import List
 from app.db import get_database
+# from GenMark.backend.GenAI.middle import run_langgraph_for_project 
+
+
 
 router = APIRouter(prefix="/api/project", tags = ["Projects"])
 
-# ----------- Routes ----------- #
+async def upsert_generated_output(db, project_id, update_fields):
+    collection = db["GeneratedOutput"]
+    existing = await collection.find_one({"project_id": ObjectId(project_id)})
+    if existing:
+        await collection.update_one(
+            {"project_id": ObjectId(project_id)},
+            {"$set": update_fields}
+        )
+    else:
+        await collection.insert_one({
+            "project_id": ObjectId(project_id),
+            **update_fields
+        })
 
+
+
+
+# ----------- Routes ----------- #
+# Creation of Project and Product
 @router.post("/create")
 async def create_project_and_product(
         user_id: str = Form(...),
@@ -54,59 +74,115 @@ async def create_project_and_product(
         "target_audience": target_audience,
         "output_format": output_format,
         "product_id": str(product_result.inserted_id),
-        "generated_outputs": None,
+        "generated_outputs_id": None,
         "status": "in_progress",
         "created_at": datetime.utcnow()
     }
     
     project_result = await db["Projects"].insert_one(project_doc)
+    project_id = product_result.inserted_id
 
     # Update product with project_id
     await db["Products"].update_one(
-        {"_id": product_result.inserted_id},
+        {"_id": project_id},
         {"$set": {"project_id": str(project_result.inserted_id)}}
     )
+
+    generated_output = await db["GeneratedOutput"].find_one({"project_id": ObjectId(project_id)})
+    
+    if not generated_output:
+        await db["GeneratedOutput"].insert_one({
+            "project_id": ObjectId(project_id)
+        })
+
+    # await run_langgraph_for_project({
+    #     "user_id": user_id,
+    #     "project_id": str(project_result.inserted_id),
+    #     "project_name": name,
+    #     "target_audience": target_audience,
+    #     "output_format": output_format,
+    #     "product_name": product_name,
+    #     "description": description,
+    #     "price": price,
+    #     "discount": discount,
+    #     "image_ids": image_ids
+    # })
 
     return {"message": "Project and Product created", "project_id": str(project_result.inserted_id)}
 
 
-@router.put("/upload-generated-outputs/{project_id}")
-async def upload_generated_outputs(
+
+
+@router.put("/update/generated-output/{project_id}")
+async def upload_generated_text(
+    project_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    generated_output = await db["GeneratedOutput"].find_one({"project_id": ObjectId(project_id)})
+    
+    if not generated_output:
+        raise HTTPException(status_code=404, detail="GeneratedOutput not found")
+
+    # Update the project with reference to generated_output._id
+    await db["Projects"].update_one(
+        {"_id": ObjectId(project_id)},
+        {"$set": {"generated_output_id": generated_output["_id"]}}
+    )
+    return {"message": "Generated Data linked"}
+
+
+
+
+# Upload of Generated Image
+@router.put("/upload-generated-image/{project_id}")
+async def upload_generated_image(
+    project_id: str,
+    image_output: UploadFile = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
+    content = await image_output.read()
+    image_id = await bucket.upload_from_stream(image_output.filename, content)
+
+    await upsert_generated_output(db, project_id, {"image": str(image_id)})
+    return {"message": "Image uploaded", "image_id": str(image_id)}
+
+
+
+
+
+# Upload of Generated Text
+@router.put("/upload-generated-text/{project_id}")
+async def upload_generated_text(
     project_id: str,
     text: str = Form(...),
-    image_outputs: List[UploadFile] = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    await upsert_generated_output(db, project_id, {"text": text})
+    return {"message": "Text uploaded"}
+
+
+
+
+# Upload of Generated Video
+@router.put("/upload-generated-video/{project_id}")
+async def upload_generated_video(
+    project_id: str,
     video_output: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    project = await db["Projects"].find_one({"_id": ObjectId(project_id)})
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
+    content = await video_output.read()
+    video_id = await bucket.upload_from_stream(video_output.filename, content)
 
-    image_ids = []
-    for img in image_outputs:
-        content = await img.read()
-        img_id = await bucket.upload_from_stream(img.filename, content)
-        image_ids.append(str(img_id))
-
-    video_content = await video_output.read()
-    video_id = await bucket.upload_from_stream(video_output.filename, video_content)
-
-    outputs = {
-        "text": text,
-        "video": str(video_id),
-        "image_urls": image_ids
-    }
-
-    await db["Projects"].update_one(
-        {"_id": ObjectId(project_id)},
-        {"$set": {"generated_outputs": outputs, "status": "completed"}}
-    )
-
-    return {"message": "Generated outputs uploaded successfully"}
+    await upsert_generated_output(db, project_id, {"video": str(video_id)})
+    return {"message": "Video uploaded", "video_id": str(video_id)}
 
 
+
+
+
+# Stream Generated Image
 @router.get("/stream/image/{file_id}")
 async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     try:
@@ -116,6 +192,10 @@ async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_data
     except:
         raise HTTPException(status_code=404, detail="Image not found")
 
+
+
+
+# Stream Product Image
 @router.get("/uploaded/image/{file_id}")
 async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     try:
@@ -126,6 +206,10 @@ async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_data
         raise HTTPException(status_code=404, detail="Image not found")
 
 
+
+
+
+# Delete Product-Project
 @router.delete("/delete/{project_id}")
 async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     project = await db["Projects"].find_one({"_id": ObjectId(project_id)})
@@ -134,11 +218,13 @@ async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get
 
     # Delete generated outputs from GridFS
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
-    if project.get("generated_outputs"):
+    
+    if project.get("generated_outputs_id"):
         try:
-            await bucket.delete(ObjectId(project["generated_outputs"]["video"]))
-            for img_id in project["generated_outputs"]["image_urls"]:
-                await bucket.delete(ObjectId(img_id))
+            generated_output = await db["GeneratedOutput"].find_one({"_id": ObjectId(project.get("generated_outputs_id"))})
+            await bucket.delete(ObjectId(generated_output["image"]))
+            await bucket.delete(ObjectId(generated_output["video"]))
+            await db["GeneratedOutput"].delete_one({"_id": project.get("generated_outputs_id")})
         except Exception:
             pass
 

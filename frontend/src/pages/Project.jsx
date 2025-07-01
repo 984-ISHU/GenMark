@@ -34,6 +34,7 @@ const Project = () => {
 
   const user_data = localStorage.getItem("user");
   const user = JSON.parse(user_data);
+  // console.log(user);
   const [customOutputDescription, setCustomOutputDescription] = useState("");
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
@@ -118,7 +119,7 @@ const Project = () => {
     }
 
     const formData = new FormData();
-    formData.append("user_id", user.username); // or however you're storing it
+    formData.append("user_id", user.id); // or however you're storing it
     formData.append("name", project_name);
     formData.append("target_audience", targetAudience); // from AudienceSelector
     formData.append("output_format", customOutputDescription);
@@ -140,6 +141,11 @@ const Project = () => {
       if (!response.ok) throw new Error("Failed to create project");
 
       const data = await response.json();
+
+      if (data.project_id) {
+        localStorage.setItem("project_id", data.project_id);
+      }
+
       toast.success("Project created successfully!");
       console.log(data); // maybe store project_id?
     } catch (error) {

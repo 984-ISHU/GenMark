@@ -7,7 +7,7 @@ function Login() {
   const [identifier, setIdentifier] = useState(""); // email or username
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState(""); // only for signup
-  const [email, setEmail] = useState("");       // only for signup
+  const [email, setEmail] = useState(""); // only for signup
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,16 +24,21 @@ function Login() {
           identifier,
           password,
         });
+        console.log(res);
         // Store user (optional)
         localStorage.setItem("user", JSON.stringify(res.data));
         navigate("/dashboard");
       } else {
         // Register
-        const res = await axios.post("http://localhost:8000/api/user/register", {
-          username,
-          email,
-          password,
-        });
+        const res = await axios.post(
+          "http://localhost:8000/api/user/register",
+          {
+            username,
+            email,
+            password,
+          }
+        );
+        console.log(res);
         localStorage.setItem("user", JSON.stringify(res.data));
         navigate("/dashboard");
       }
