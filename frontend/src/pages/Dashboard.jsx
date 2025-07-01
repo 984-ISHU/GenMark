@@ -13,11 +13,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '../auth/AuthContext'; // Import AuthContext
+import { useAuth } from '../auth/AuthContext';
+import { getUserProfile, getAllProjects, getDatasets, deleteProject, deleteDataset, createDatasetFormData, uploadDataset } from '../lib/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user: contextUser } = useAuth(); // Get user from AuthContext
+  const { user: contextUser } = useAuth();
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
   const [datasets, setDatasets] = useState([]);
@@ -36,18 +37,9 @@ const Dashboard = () => {
   const [datasetFile, setDatasetFile] = useState(null);
   const [uploadingDataset, setUploadingDataset] = useState(false);
 
-  // Helper function to get cookie value
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  };
-
   // Initialize user data from context or fetch from API
   useEffect(() => {
     if (contextUser) {
-      // If user data is available in context, use it
       const userData = {
         id: contextUser.id || contextUser.user?.id,
         username: contextUser.username || contextUser.user?.username || '',
@@ -56,7 +48,6 @@ const Dashboard = () => {
       setUser(userData);
       setLoading(false);
     } else {
-      // Try to get from localStorage first
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
@@ -76,31 +67,9 @@ const Dashboard = () => {
   // Fetch user profile from API
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        // Store user data in localStorage for future use
-        localStorage.setItem('user', JSON.stringify(userData));
-      } else if (response.status === 401) {
-        // Token expired or invalid, redirect to login
-        toast.error('Session expired. Please login again.');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        navigate('/login');
-      } else {
-        toast.error('Failed to load user profile');
-        navigate('/login');
-      }
+      const response = await getUserProfile();
+      setUser(response.data);
+      localStorage.setItem('user', JSON.stringify(response.data));
     } catch (error) {
       console.error('Error fetching user profile:', error);
       toast.error('Failed to load user profile');
@@ -118,29 +87,17 @@ const Dashboard = () => {
     }
   }, [user]);
 
-// Fixed fetchProjects function - change the URL to absolute
-const fetchProjects = async () => {
-  if (!user) return;
-  
-  setProjectsLoading(true);
-  try {
-    const token = localStorage.getItem('access_token') || getCookie('access_token');
+  // Fetch user's projects
+  const fetchProjects = async () => {
+    if (!user) return;
     
-    // Changed from '/api/project/all' to 'http://localhost:8000/api/project/all'
-    const response = await fetch('http://localhost:8000/api/project/all', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
-    
-    if (response.ok) {
-      const allProjects = await response.json();
-      console.log('All projects:', allProjects); // Debug log
-      console.log('Current user:', user); // Debug log
+    setProjectsLoading(true);
+    try {
+      const response = await getAllProjects();
+      const allProjects = response.data;
+      console.log('All projects:', allProjects);
+      console.log('Current user:', user);
       
-      // Filter projects by current user - more flexible matching
       const userProjects = allProjects.filter(project => {
         const projectUserId = project.user_id?.$oid || project.user_id;
         return (
@@ -153,19 +110,15 @@ const fetchProjects = async () => {
         );
       });
       
-      console.log('Filtered user projects:', userProjects); // Debug log
+      console.log('Filtered user projects:', userProjects);
       setProjects(userProjects);
-    } else {
-      console.error('Failed to fetch projects');
-      console.error('Response status:', response.status);
-      console.error('Response text:', await response.text());
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to fetch projects');
+    } finally {
+      setProjectsLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-  } finally {
-    setProjectsLoading(false);
-  }
-};
+  };
 
   // Fetch user's datasets
   const fetchDatasets = async () => {
@@ -173,31 +126,18 @@ const fetchProjects = async () => {
     
     setDatasetsLoading(true);
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const response = await fetch('http://localhost:8000/api/datasets/', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const allDatasets = await response.json();
-        // Filter datasets by current user
-        const userDatasets = allDatasets.filter(dataset => 
-          dataset.user_id === user.id || 
-          dataset.user_id === user.username ||
-          dataset.created_by === user.id ||
-          dataset.created_by === user.username
-        );
-        setDatasets(userDatasets);
-      } else {
-        console.error('Failed to fetch datasets');
-      }
+      const response = await getDatasets();
+      const allDatasets = response.data;
+      const userDatasets = allDatasets.filter(dataset => 
+        dataset.user_id === user.id || 
+        dataset.user_id === user.username ||
+        dataset.created_by === user.id ||
+        dataset.created_by === user.username
+      );
+      setDatasets(userDatasets);
     } catch (error) {
       console.error('Error fetching datasets:', error);
+      toast.error('Failed to fetch datasets');
     } finally {
       setDatasetsLoading(false);
     }
@@ -212,7 +152,6 @@ const fetchProjects = async () => {
 
     setCreatingProject(true);
     try {
-      // Store project name in localStorage and navigate to project page
       localStorage.setItem('ProjectName', newProjectName.trim());
       toast.success('Project created! Configure your project details.');
       navigate('/project');
@@ -233,24 +172,9 @@ const fetchProjects = async () => {
     }
 
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const response = await fetch(`http://localhost:8000/api/project/delete/${projectId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        toast.success('Project deleted successfully');
-        fetchProjects(); // Refresh projects list
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Failed to delete project');
-      }
+      await deleteProject(projectId);
+      toast.success('Project deleted successfully');
+      fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
       toast.error('Failed to delete project');
@@ -276,33 +200,13 @@ const fetchProjects = async () => {
 
     setUploadingDataset(true);
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const formData = new FormData();
-      formData.append('user_id', user.id);
-      formData.append('dataset_name', newDatasetName.trim());
-      formData.append('file', datasetFile);
-
-      const response = await fetch('http://localhost:8000/api/datasets/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast.success('Dataset uploaded successfully!');
-        fetchDatasets(); // Refresh datasets list
-        setShowNewDatasetModal(false);
-        setNewDatasetName('');
-        setDatasetFile(null);
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Failed to upload dataset');
-      }
+      const formData = createDatasetFormData(user.id, newDatasetName.trim(), datasetFile);
+      await uploadDataset(formData);
+      toast.success('Dataset uploaded successfully!');
+      fetchDatasets();
+      setShowNewDatasetModal(false);
+      setNewDatasetName('');
+      setDatasetFile(null);
     } catch (error) {
       console.error('Error uploading dataset:', error);
       toast.error('Failed to upload dataset');
@@ -318,24 +222,9 @@ const fetchProjects = async () => {
     }
 
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const response = await fetch(`http://localhost:8000/api/datasets/${datasetId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        toast.success('Dataset deleted successfully');
-        fetchDatasets(); // Refresh datasets list
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Failed to delete dataset');
-      }
+      await deleteDataset(datasetId);
+      toast.success('Dataset deleted successfully');
+      fetchDatasets();
     } catch (error) {
       console.error('Error deleting dataset:', error);
       toast.error('Failed to delete dataset');

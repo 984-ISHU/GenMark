@@ -13,51 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-
-// API functions - these should match your api.js structure
-const API_BASE_URL = '';
-
-const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('access_token');
-  const headers = {
-    'Authorization': `Bearer ${token}`,
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API call failed: ${response.statusText}`);
-  }
-
-  return response.json();
-};
-
-// API functions
-const getDatasets = async () => {
-  return apiCall('/api/datasets/');
-};
-
-const createProject = async (formData) => {
-  const token = localStorage.getItem('access_token');
-  
-  const response = await fetch(`${API_BASE_URL}/api/project/create`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to create project: ${response.statusText}`);
-  }
-
-  return response.json();
-};
+import { getDatasets, createProjectAndProduct, createProjectFormData } from "@/lib/api";
 
 const Project = () => {
   const navigate = useNavigate();
@@ -107,7 +63,6 @@ const Project = () => {
       console.log("Context User:", userData);
       setUser(userData);
     } else {
-      // Try to get from localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
@@ -120,7 +75,7 @@ const Project = () => {
           console.log("Normalized user:", normalizedUser);
           setUser(normalizedUser);
         } catch (error) {
-          console.error('Error parsing stored user data:', error);
+          console.error('稀 parsing stored user data:', error);
           toast.error('Session expired. Please login again.');
           navigate('/login');
           return;
@@ -153,8 +108,8 @@ const Project = () => {
       
       setDatasetsLoading(true);
       try {
-        const data = await getDatasets();
-        setDatasets(Array.isArray(data) ? data : data.datasets || []);
+        const response = await getDatasets();
+        setDatasets(Array.isArray(response.data) ? response.data : response.data.datasets || []);
       } catch (error) {
         console.error("Error fetching datasets:", error);
         toast.error("Failed to load datasets");
@@ -172,7 +127,6 @@ const Project = () => {
     if (selected) {
       setCategories(selected.categories || []);
       setLocations(selected.locations || []);
-      // Reset selections when dataset changes
       setCategory("");
       setLocation("");
     } else {
@@ -229,66 +183,56 @@ const Project = () => {
 
   // Handle project creation
   const handleGenerate = async () => {
-  if (!user || !user.id) {
-    toast.error("User not found. Please login again.");
-    navigate('/login');
-    return;
-  }
+    if (!user || !user.id) {
+      toast.error("User not found. Please login again.");
+      navigate('/login');
+      return;
+    }
 
-  console.log("User before project creation:", user); // <--- this should show valid id
+    const validationErrors = validateForm();
 
-  const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      toast.error("Please fix the following errors:", {
+        description: validationErrors.join(", "),
+      });
+      return;
+    }
 
-  if (validationErrors.length > 0) {
-    toast.error("Please fix the following errors:", {
-      description: validationErrors.join(", "),
-    });
-    return;
-  }
+    setCreating(true);
 
-  setCreating(true);
+    try {
+      const projectData = {
+        userId: user.id,
+        name: project_name,
+        targetAudience,
+        outputFormat: customOutputDescription,
+        productName,
+        description,
+        price,
+        discount,
+        productImages
+      };
+      const formData = createProjectFormData(projectData);
+      const response = await createProjectAndProduct(formData);
 
-  try {
-    const formData = new FormData();
-    formData.append("user_id", user.id);
-    formData.append("name", project_name);
-    formData.append("target_audience", targetAudience);
-    formData.append("output_format", customOutputDescription);
-    formData.append("product_name", productName);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append("discount", discount);
-    formData.append("dataset_name", selectedDataset);
-    formData.append("category", category);
-    formData.append("location", location);
-    formData.append("gender", selectedGender);
-    formData.append("ages", selectedAges.join(","));
+      toast.success("Project created successfully!", {
+        description: "Your marketing content is being generated.",
+      });
 
-    productImages.forEach((file) => {
-      formData.append("product_images", file);
-    });
+      console.log("Project created:", response);
 
-    const response = await createProject(formData);
-
-    toast.success("Project created successfully!", {
-      description: "Your marketing content is being generated.",
-    });
-
-    console.log("Project created:", response);
-
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 1500);
-  } catch (error) {
-    console.error("Error creating project:", error);
-    toast.error("Failed to create project", {
-      description: error.message || "Please try again.",
-    });
-  } finally {
-    setCreating(false);
-  }
-};
-
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project", {
+        description: error.message || "Please try again.",
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
 
   // Handle file upload
   const handleFileUpload = (e) => {
