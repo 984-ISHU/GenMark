@@ -17,7 +17,7 @@ const Profile = () => {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [usernameLoading, setUsernameLoading] = useState(false);
-  
+    
   // Password change state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -34,12 +34,13 @@ const Profile = () => {
 
   // Initialize user data from context or fetch from API
   useEffect(() => {
-    if (contextUser) {
+    if (contextUser && contextUser.email)  {
       // If user data is available in context, use it
       setUser({
         username: contextUser.username || contextUser.user?.username || '',
         email: contextUser.email || contextUser.user?.email || ''
       });
+
       setNewUsername(contextUser.username || contextUser.user?.username || '');
       setLoading(false);
     } else {
@@ -63,8 +64,11 @@ const Profile = () => {
       
       if (response.ok) {
         const userData = await response.json();
+        console.log('Frontend - API Response:', userData); // Debug line
+        console.log('Frontend - Email field:', userData.email); // Debug line
         setUser(userData);
         setNewUsername(userData.username);
+
       } else if (response.status === 401) {
         // Token expired or invalid, redirect to login
         navigate('/login');
