@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Edit2, Save, X, Eye, EyeOff, LogOut } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext'; // Import your AuthContext
+import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { 
+  getUserProfile, 
+  updateUsername, 
+  changePassword, 
+  logoutUser 
+} from '../lib/api';
 
 const Profile = () => {
-  const { user: contextUser, logout } = useAuth(); // Get user from context
+  const { user: contextUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const [user, setUser] = useState({ username: '', email: '' });
@@ -34,7 +40,7 @@ const Profile = () => {
 
   // Initialize user data from context or fetch from API
   useEffect(() => {
-    if (contextUser && contextUser.email)  {
+    if (contextUser && contextUser.email) {
       // If user data is available in context, use it
       setUser({
         username: contextUser.username || contextUser.user?.username || '',
@@ -51,45 +57,27 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      // Get token from localStorage or cookies
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
+      const response = await getUserProfile();
+      const userData = response.data;
       
-      const response = await fetch('http://localhost:8000/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      console.log('Frontend - API Response:', userData); // Debug line
+      console.log('Frontend - Email field:', userData.email); // Debug line
       
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('Frontend - API Response:', userData); // Debug line
-        console.log('Frontend - Email field:', userData.email); // Debug line
-        setUser(userData);
-        setNewUsername(userData.username);
-
-      } else if (response.status === 401) {
+      setUser(userData);
+      setNewUsername(userData.username);
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+      
+      if (err.response?.status === 401) {
         // Token expired or invalid, redirect to login
         navigate('/login');
       } else {
         setError('Failed to load profile');
         toast.error('Failed to load profile');
       }
-    } catch (err) {
-      setError('Failed to load profile');
-      toast.error('Failed to load profile');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper function to get cookie value
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
   };
 
   const handleUsernameEdit = () => {
@@ -115,37 +103,23 @@ const Profile = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
+      const response = await updateUsername({ username: newUsername.trim() });
+      const data = response.data;
+
+      setUser({ ...user, username: newUsername.trim() });
+      setIsEditingUsername(false);
+      setSuccess('Username updated successfully!');
+      toast.success('Username updated successfully!');
       
-      const response = await fetch('http://localhost:8000/api/user/update-username', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username: newUsername.trim() })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUser({ ...user, username: newUsername.trim() });
-        setIsEditingUsername(false);
-        setSuccess('Username updated successfully!');
-        toast.success('Username updated successfully!');
-        
-        // Update token if provided
-        if (data.new_token) {
-          localStorage.setItem('access_token', data.new_token);
-        }
-      } else {
-        setError(data.detail || 'Failed to update username');
-        toast.error(data.detail || 'Failed to update username');
+      // Update token if provided
+      if (data.new_token) {
+        localStorage.setItem('access_token', data.new_token);
       }
     } catch (err) {
-      setError('Failed to update username');
-      toast.error('Failed to update username');
+      console.error('Username update error:', err);
+      const errorMessage = err.response?.data?.detail || 'Failed to update username';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUsernameLoading(false);
     }
@@ -174,35 +148,20 @@ const Profile = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      const response = await fetch('http://localhost:8000/api/user/change-password', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword
-        })
+      await changePassword({
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Password updated successfully!');
-        toast.success('Password updated successfully!');
-        setShowPasswordForm(false);
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      } else {
-        setError(data.detail || 'Failed to update password');
-        toast.error(data.detail || 'Failed to update password');
-      }
+      setSuccess('Password updated successfully!');
+      toast.success('Password updated successfully!');
+      setShowPasswordForm(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
-      setError('Failed to update password');
-      toast.error('Failed to update password');
+      console.error('Password change error:', err);
+      const errorMessage = err.response?.data?.detail || 'Failed to update password';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setPasswordLoading(false);
     }
@@ -217,15 +176,7 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('access_token') || getCookie('access_token');
-      
-      await fetch('http://localhost:8000/api/user/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
-      });
+      await logoutUser();
       
       // Clear local storage and context
       localStorage.removeItem('access_token');

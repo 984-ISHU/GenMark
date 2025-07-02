@@ -1,7 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { loginUser, registerUser } from "../lib/api";
 import {
   Eye,
   EyeOff,
@@ -37,68 +37,43 @@ function Login() {
     setError("");
 
     try {
+      let response;
+
       if (isLogin) {
-        // Login
-        const res = await axios.post(
-          "http://localhost:8000/api/user/login",
-          {
-            identifier,
-            password,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        // Store token in localStorage
-        if (res.data.access_token) {
-          localStorage.setItem("access_token", res.data.access_token);
-        }
-
-        // Also set cookie if needed
-        if (res.data.access_token) {
-          document.cookie = `access_token=${res.data.access_token}; path=/; secure; samesite=lax; max-age=86400`; // 24 hours
-        }
-
-        login(res.data);
-        navigate(redirect, { replace: true });
+        // Login using API function
+        response = await loginUser({
+          identifier,
+          password,
+        });
       } else {
-        // Register - Debug the request
+        // Register using API function
         console.log("Sending register request with:", {
           username,
           email,
           password,
         });
 
-        const res = await axios.post(
-          "http://localhost:8000/api/user/register",
-          {
-            username,
-            email,
-            password,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        // Store token in localStorage
-        if (res.data.access_token) {
-          localStorage.setItem("access_token", res.data.access_token);
-        }
-
-        // Also set cookie if needed
-        if (res.data.access_token) {
-          document.cookie = `access_token=${res.data.access_token}; path=/; secure; samesite=lax; max-age=86400`; // 24 hours
-        }
-
-        login(res.data);
-        navigate(redirect, { replace: true });
+        response = await registerUser({
+          username,
+          email,
+          password,
+        });
       }
+
+      // Handle successful authentication
+      const userData = response.data;
+
+      // Store token in localStorage if provided
+      if (userData.access_token) {
+        localStorage.setItem("access_token", userData.access_token);
+        
+        // Also set cookie if needed
+        document.cookie = `access_token=${userData.access_token}; path=/; secure; samesite=lax; max-age=86400`; // 24 hours
+      }
+
+      login(userData);
+      navigate(redirect, { replace: true });
+
     } catch (err) {
       console.error("Authentication error:", err.response?.data);
       setError(err.response?.data?.detail || "Something went wrong.");
