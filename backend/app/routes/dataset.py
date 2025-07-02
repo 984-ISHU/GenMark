@@ -33,11 +33,18 @@ def to_object_id(id_str: str, field: str):
     except Exception:
         raise HTTPException(status_code=400, detail=f"Invalid {field} format")
 
-
 @router.get("/", response_model=List[DatasetOut])
 async def get_datasets():
     datasets = []
     async for dataset in dataset_collection.find():
+        datasets.append(dataset_helper(dataset))
+    return datasets
+
+from pprint import pprint
+@router.get("/{user_id}", response_model = List[DatasetOut])
+async def get_user_datasets(user_id: str):
+    datasets = []
+    async for dataset in dataset_collection.find({"user_id": ObjectId(user_id)}):
         datasets.append(dataset_helper(dataset))
     return datasets
 

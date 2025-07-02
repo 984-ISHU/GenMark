@@ -15,7 +15,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import axios from "axios";
 import {
-  getDatasets,
+  getUserDatasets,
   createProjectAndProduct,
   createProjectFormData,
 } from "@/lib/api";
@@ -127,7 +127,8 @@ const Project = () => {
 
       setDatasetsLoading(true);
       try {
-        const response = await getDatasets();
+        const response = await getUserDatasets(user.id);
+        console.log("Got User datasets");
         setDatasets(
           Array.isArray(response.data)
             ? response.data

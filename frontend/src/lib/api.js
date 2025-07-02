@@ -10,19 +10,26 @@ const API = axios.create({
 export const registerUser = (payload) => API.post("/user/register", payload);
 export const loginUser = (payload) => API.post("/user/login", payload);
 export const getUserProfile = () => API.get("/user/profile");
-export const getUserByUsername = (username) => API.get(`/user/userdetails/by-username?username=${username}`);
-export const getUserByEmail = (email) => API.get(`/user/userdetails/by-email?email=${email}`);
-export const updateUsername = (payload) => API.post("/user/update-username", payload);
-export const changePassword = (payload) => API.post("/user/change-password", payload);
+export const getUserByUsername = (username) =>
+  API.get(`/user/userdetails/by-username?username=${username}`);
+export const getUserByEmail = (email) =>
+  API.get(`/user/userdetails/by-email?email=${email}`);
+export const updateUsername = (payload) =>
+  API.post("/user/update-username", payload);
+export const changePassword = (payload) =>
+  API.post("/user/change-password", payload);
 export const logoutUser = () => API.post("/user/logout");
 
 // ============ DATASET API ============
 export const getDatasets = () => API.get("/datasets/");
+export const getUserDatasets = (user_id) => API.get(`/datasets/${user_id}`);
+
 export const getDataset = (datasetId) => API.get(`/datasets/${datasetId}`);
-export const deleteDataset = (datasetId) => API.delete(`/datasets/${datasetId}`);
+export const deleteDataset = (datasetId) =>
+  API.delete(`/datasets/${datasetId}`);
 
 // Upload dataset (multipart form data)
-export const uploadDataset = (formData) => 
+export const uploadDataset = (formData) =>
   API.post("/datasets/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
@@ -31,6 +38,9 @@ export const uploadDataset = (formData) =>
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
+
+export const getAllUserProjects = (user_id) =>
+  API.get(`/project/all/${user_id}`);
 
 // Create project with product (multipart form data)
 export const createProjectAndProduct = (formData) =>
@@ -48,16 +58,19 @@ export const uploadGeneratedOutputs = (projectId, formData) =>
     },
   });
 
-export const deleteProject = (projectId) => API.delete(`/project/delete/${projectId}`);
+export const deleteProject = (projectId) =>
+  API.delete(`/project/delete/${projectId}`);
 
 // Stream/download endpoints
-export const getGeneratedImage = (fileId) => API.get(`/project/stream/image/${fileId}`, {
-  responseType: 'blob'
-});
+export const getGeneratedImage = (fileId) =>
+  API.get(`/project/stream/image/${fileId}`, {
+    responseType: "blob",
+  });
 
-export const getUploadedImage = (fileId) => API.get(`/project/uploaded/image/${fileId}`, {
-  responseType: 'blob'
-});
+export const getUploadedImage = (fileId) =>
+  API.get(`/project/uploaded/image/${fileId}`, {
+    responseType: "blob",
+  });
 
 // ============ HELPER FUNCTIONS ============
 
@@ -73,7 +86,7 @@ export const createDatasetFormData = (userId, datasetName, file) => {
 // Helper function to create FormData for project creation
 export const createProjectFormData = (projectData) => {
   const formData = new FormData();
-  
+
   // Required fields
   formData.append("user_id", projectData.userId);
   formData.append("name", projectData.name);
@@ -83,31 +96,31 @@ export const createProjectFormData = (projectData) => {
   formData.append("description", projectData.description);
   formData.append("price", projectData.price);
   formData.append("discount", projectData.discount);
-  
+
   // Product images (array of files)
   if (projectData.productImages && projectData.productImages.length > 0) {
     projectData.productImages.forEach((image) => {
       formData.append("product_images", image);
     });
   }
-  
+
   return formData;
 };
 
 // Helper function to create FormData for generated outputs upload
 export const createGeneratedOutputsFormData = (outputsData) => {
   const formData = new FormData();
-  
+
   formData.append("text", outputsData.text);
   formData.append("video_output", outputsData.videoOutput);
-  
+
   // Image outputs (array of files)
   if (outputsData.imageOutputs && outputsData.imageOutputs.length > 0) {
     outputsData.imageOutputs.forEach((image) => {
       formData.append("image_outputs", image);
     });
   }
-  
+
   return formData;
 };
 

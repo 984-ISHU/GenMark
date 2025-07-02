@@ -111,19 +111,30 @@ async def create_project_and_product(
 
     return {"message": "Project and Product created", "project_id": str(project_result.inserted_id)}
 
+def clean_mongo_doc(doc):
+    cleaned = {}
+    for key, value in doc.items():
+        if isinstance(value, ObjectId):
+            cleaned[key] = str(value)
+        elif isinstance(value, datetime):
+            cleaned[key] = value.isoformat()
+        else:
+            cleaned[key] = value
+    return cleaned
+
 @router.get("/all")
 async def get_all_projects(db: AsyncIOMotorDatabase = Depends(get_database)):
     projects = []
     async for p in db["Projects"].find():
-        p["_id"] = str(p["_id"])
-
-        projects.append(p)
-
+        projects.append(clean_mongo_doc(p))
     return projects
 
-
-
-
+@router.get("/all/{user_id}")
+async def get_all_user_projects(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    projects = []
+    async for p in db["Projects"].find({"user_id":ObjectId(user_id)}):
+        projects.append(clean_mongo_doc(p))
+    return projects
 
 @router.put("/update/generated-output/{project_id}")
 async def upload_generated_text(
