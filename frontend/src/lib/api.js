@@ -42,6 +42,13 @@ export const getAllProjects = () => API.get("/project/all");
 export const getAllUserProjects = (user_id) =>
   API.get(`/project/all/${user_id}`);
 
+// Get single project details
+export const getProject = (projectId) => API.get(`/project/${projectId}`);
+
+// Get project's generated outputs
+export const getProjectOutputs = (projectId) =>
+  API.get(`/project/outputs/${projectId}`);
+
 // Create project with product (multipart form data)
 export const createProjectAndProduct = (formData) =>
   API.post("/project/create", formData, {
@@ -60,6 +67,38 @@ export const uploadGeneratedOutputs = (projectId, formData) =>
 
 export const deleteProject = (projectId) =>
   API.delete(`/project/delete/${projectId}`);
+
+// ============ EDIT/REGENERATE API ============
+
+// Regenerate text content with modifications
+export const regenerateText = (projectId, payload) =>
+  API.post(`/project/regenerate/text/${projectId}`, payload);
+
+// Regenerate image with modifications
+export const regenerateImage = (projectId, payload) =>
+  API.post(`/project/regenerate/image/${projectId}`, payload);
+
+// Regenerate video with modifications
+export const regenerateVideo = (projectId, payload) =>
+  API.post(`/project/regenerate/video/${projectId}`, payload);
+
+// Update text content directly
+export const updateTextContent = (projectId, payload) =>
+  API.put(`/project/update/text/${projectId}`, payload);
+
+// Get regeneration status
+export const getRegenerationStatus = (projectId) =>
+  API.get(`/project/regeneration/status/${projectId}`);
+
+// ============ LANGGRAPH WORKFLOW API ============
+
+// Trigger workflow with specific generation mode
+export const triggerWorkflow = (projectId, mode = "generate") =>
+  API.post(`/project/workflow/${projectId}`, { mode });
+
+// Get workflow status
+export const getWorkflowStatus = (projectId) =>
+  API.get(`/project/workflow/status/${projectId}`);
 
 // Stream/download endpoints
 export const getGeneratedImage = (fileId) =>
@@ -122,6 +161,16 @@ export const createGeneratedOutputsFormData = (outputsData) => {
   }
 
   return formData;
+};
+
+// Helper function to create payload for regeneration
+export const createRegenerationPayload = (currentOutput, modifications, additionalContext = {}) => {
+  return {
+    current_output: currentOutput,
+    modifications: modifications,
+    additional_context: additionalContext,
+    timestamp: new Date().toISOString()
+  };
 };
 
 // ============ REQUEST INTERCEPTORS ============

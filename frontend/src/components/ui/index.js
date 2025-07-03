@@ -8,4 +8,6 @@ export * from "./card";
 export * from "./checkbox";
 export * from "./badge";
 export * from "./avatar";
+export * from "./alert";
 export * from "./dialog";
+export * from "./label";
