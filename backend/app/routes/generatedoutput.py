@@ -1,9 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Body, Form, Request
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
 from bson import ObjectId
-import asyncio
-from typing import List
 from app.db import get_database
 
 

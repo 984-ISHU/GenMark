@@ -6,7 +6,6 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, Optional, List, Annotated, Dict
 from langgraph.channels import LastValue
 from dotenv import load_dotenv
-from PIL import Image
 from io import BytesIO
 from google import genai as gai
 from google.genai import types
