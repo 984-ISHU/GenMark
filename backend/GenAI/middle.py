@@ -28,6 +28,7 @@ class AgentState(TypedDict):
     name: str  # project_name
     product_name: str
     description: str
+    product_url: str
     price: float
     discount: float
     image_ids: List[str]

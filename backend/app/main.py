@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import project, dataset, user, send_email
+from app.routes import project, dataset, user, generatedoutput, send_email
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -24,6 +24,7 @@ app.include_router(dataset.router)
 app.include_router(user.router)
 app.include_router(project.router)
 app.include_router(send_email.router)
+app.include_router(generatedoutput.router)
 
 @app.get("/")
 async def root():

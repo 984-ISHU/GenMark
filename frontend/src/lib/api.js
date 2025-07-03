@@ -39,6 +39,15 @@ export const uploadDataset = (formData) =>
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
 
+export const getSpecificProject = (user_id, project_id) =>
+  API.get(`/project/${user_id}/${project_id}`);
+
+export const getGeneratedOutput = (generated_output_id) =>
+  API.get(`/generated_output/${generated_output_id}`);
+
+export const getGeneratedImageURL = (image_id) =>
+  `http://localhost:8000/api/generated_output/image/${image_id}`;
+
 export const getAllUserProjects = (user_id) =>
   API.get(`/project/all/${user_id}`);
 
@@ -133,6 +142,7 @@ export const createProjectFormData = (projectData) => {
   formData.append("output_format", projectData.outputFormat);
   formData.append("product_name", projectData.productName);
   formData.append("description", projectData.description);
+  formData.append("product_url", projectData.productUrl);
   formData.append("price", projectData.price);
   formData.append("discount", projectData.discount);
 
