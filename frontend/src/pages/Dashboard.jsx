@@ -373,12 +373,20 @@ const Dashboard = () => {
                           <button
                             onClick={() => {
                               localStorage.setItem("ProjectName", project.name);
-                              navigate("/project");
+                              navigate("/preview", {
+                                state: {
+                                  name: user.username,
+                                  user_id: user.id,
+                                  projectName: project.name,
+                                  project_id: project.id || project._id,
+                                },
+                              });
                             }}
                             className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
                           >
                             Open
                           </button>
+
                           <button
                             onClick={() =>
                               handleDeleteProject(project.id || project._id)

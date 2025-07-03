@@ -4,10 +4,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
+import asyncio
 from typing import List
 from app.db import get_database
-# from GenMark.backend.GenAI.middle import run_langgraph_for_project 
-
+from GenAI.middle import run_langgraph_for_project
 
 
 router = APIRouter(prefix="/api/project", tags = ["Projects"])
@@ -26,6 +26,11 @@ async def upsert_generated_output(db, project_id, update_fields):
             **update_fields
         })
 
+def convert_object_ids(doc):
+    for key, value in doc.items():
+        if isinstance(value, ObjectId):
+            doc[key] = str(value)
+    return doc
 
 
 
@@ -39,6 +44,7 @@ async def create_project_and_product(
     output_format: str = Form(...),
     product_name: str = Form(...),
     description: str = Form(...),
+    product_url: str = Form(...),
     price: float = Form(...),
     discount: float = Form(...),
     product_images: List[UploadFile] = File(...),
@@ -62,6 +68,7 @@ async def create_project_and_product(
         "name": product_name,
         "description": description,
         "price": price,
+        "product_url": product_url,
         "discount": discount,
         "images": image_ids,
         "project_id": None
@@ -81,7 +88,7 @@ async def create_project_and_product(
     }
     
     project_result = await db["Projects"].insert_one(project_doc)
-    project_id = product_result.inserted_id
+    project_id = project_result.inserted_id 
 
     # Update product with project_id
     await db["Products"].update_one(
@@ -95,19 +102,33 @@ async def create_project_and_product(
         await db["GeneratedOutput"].insert_one({
             "project_id": ObjectId(project_id)
         })
+    
+    project_input_data = {
+        "user_id": user_id,
+        "project_id": str(project_result.inserted_id),
+        "name": name,
+        "product_name": product_name,
+        "description": description,
+        "product_url": product_url,
+        "price": price,
+        "discount": discount,
+        "image_ids": image_ids,
+        "target_audience": target_audience,
+        "output_format": output_format,
+        "status": "initiated",
+        "generationDone": "NotStarted",
+        "generated_outputs_id": None,
+        "automate_campaign": None,
+        "text_prompt": "",
+        "image_prompt": "",
+        "video_prompt": "",
+        "text_output": None,
+        "image_output": None,
+        "video_output": None
+    }
 
-    # await run_langgraph_for_project({
-    #     "user_id": user_id,
-    #     "project_id": str(project_result.inserted_id),
-    #     "project_name": name,
-    #     "target_audience": target_audience,
-    #     "output_format": output_format,
-    #     "product_name": product_name,
-    #     "description": description,
-    #     "price": price,
-    #     "discount": discount,
-    #     "image_ids": image_ids
-    # })
+    # Call langgraph
+    asyncio.create_task(run_langgraph_for_project(project_input_data))
 
     return {"message": "Project and Product created", "project_id": str(project_result.inserted_id)}
 
@@ -136,6 +157,20 @@ async def get_all_user_projects(user_id: str, db: AsyncIOMotorDatabase = Depends
         projects.append(clean_mongo_doc(p))
     return projects
 
+@router.get("/{user_id}/{project_id}")
+async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    print("User ID:", user_id)
+    print("Project ID:", project_id)
+    project = await db["Projects"].find_one({
+        "user_id": ObjectId(user_id),
+        "_id": ObjectId(project_id)
+    })
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not Found")
+
+    return convert_object_ids(project)
+
 @router.put("/update/generated-output/{project_id}")
 async def upload_generated_text(
     project_id: str,
@@ -149,7 +184,7 @@ async def upload_generated_text(
     # Update the project with reference to generated_output._id
     await db["Projects"].update_one(
         {"_id": ObjectId(project_id)},
-        {"$set": {"generated_output_id": generated_output["_id"]}}
+        {"$set": {"generated_outputs_id": generated_output["_id"]}}
     )
     return {"message": "Generated Data linked"}
 
@@ -163,10 +198,13 @@ async def upload_generated_image(
     image_output: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
+    print("Reached Upload")
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
+    print("Inside upload generated image")
     content = await image_output.read()
+    print("Read Uploaded Inside upload generated image")
     image_id = await bucket.upload_from_stream(image_output.filename, content)
-
+    print("Uploaded Inside upload generated image")
     await upsert_generated_output(db, project_id, {"image": str(image_id)})
     return {"message": "Image uploaded", "image_id": str(image_id)}
 
@@ -202,22 +240,6 @@ async def upload_generated_video(
     return {"message": "Video uploaded", "video_id": str(video_id)}
 
 
-
-
-
-# Stream Generated Image
-@router.get("/stream/image/{file_id}")
-async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
-    try:
-        bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
-        stream = await bucket.open_download_stream(ObjectId(file_id))
-        return StreamingResponse(stream, media_type="image/jpeg")
-    except:
-        raise HTTPException(status_code=404, detail="Image not found")
-
-
-
-
 # Stream Product Image
 @router.get("/uploaded/image/{file_id}")
 async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -227,9 +249,6 @@ async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_data
         return StreamingResponse(stream, media_type="image/jpeg")
     except:
         raise HTTPException(status_code=404, detail="Image not found")
-
-
-
 
 
 # Delete Product-Project
@@ -242,14 +261,47 @@ async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get
     # Delete generated outputs from GridFS
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
     
-    if project.get("generated_outputs_id"):
+    print("Generated Output ID:", project.get("generated_outputs_id"))
+
+    generated_output_id = project.get("generated_outputs_id")
+
+    if generated_output_id:
+        print("Inside delete of generated output")
         try:
-            generated_output = await db["GeneratedOutput"].find_one({"_id": ObjectId(project.get("generated_outputs_id"))})
-            await bucket.delete(ObjectId(generated_output["image"]))
-            await bucket.delete(ObjectId(generated_output["video"]))
-            await db["GeneratedOutput"].delete_one({"_id": project.get("generated_outputs_id")})
-        except Exception:
-            pass
+            # Safely convert to ObjectId
+            output_oid = ObjectId(generated_output_id)
+            
+            # Fetch the document first
+            generated_output = await db["GeneratedOutput"].find_one({"_id": output_oid})
+
+            if not generated_output:
+                print("GeneratedOutput not found.")
+            else:
+                # Delete image if present
+                if "image" in generated_output and generated_output["image"]:
+                    try:
+                        await bucket.delete(ObjectId(generated_output["image"]))
+                        print("Deleted image from GridFS.")
+                    except Exception as e:
+                        print(f"Error deleting image: {e}")
+
+                # Delete video if present
+                if "video" in generated_output and generated_output["video"]:
+                    try:
+                        await bucket.delete(ObjectId(generated_output["video"]))
+                        print("Deleted video from GridFS.")
+                    except Exception as e:
+                        print(f"Error deleting video: {e}")
+
+                # Delete the document itself
+                result = await db["GeneratedOutput"].delete_one({"_id": output_oid})
+                if result.deleted_count:
+                    print("Successfully deleted GeneratedOutput document.")
+                else:
+                    print("Failed to delete GeneratedOutput document.")
+
+        except Exception as e:
+            print(f"Exception occurred during delete: {e}")
 
     # Delete associated product and its images
     product = await db["Products"].find_one({"_id": ObjectId(project["product_id"])})

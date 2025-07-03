@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import project, dataset, user
+from app.routes import project, dataset, user, generatedoutput
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(dataset.router)
 app.include_router(user.router)
 app.include_router(project.router)
+app.include_router(generatedoutput.router)
 
 @app.get("/")
 async def root():

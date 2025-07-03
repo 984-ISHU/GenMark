@@ -25,20 +25,6 @@ const Project = () => {
   const { user: contextUser } = useAuth();
   const project_name = localStorage.getItem("ProjectName");
 
-  //  useEffect(() => {
-  //   if (project_name === null) {
-  //     toast.error("Unknown Project", {
-  //       description: "Please try again.",
-  //     });
-
-  //     setTimeout(() => {
-  //       navigate("/dashboard");
-  //     }, 1000); // wait 2 seconds before navigating
-  //   }
-  // }, [project_name, navigate]);
-
-  // if (project_name === null) return null; // prevent rendering until redirect
-
   // Loading states
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -51,6 +37,7 @@ const Project = () => {
   const [customOutputDescription, setCustomOutputDescription] = useState("");
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
+  const [productUrl, setProductUrl] = useState("");
   const [price, setPrice] = useState("");
   const [discount, setDiscount] = useState("");
   const [productImages, setProductImages] = useState([]);
@@ -195,6 +182,9 @@ const Project = () => {
     if (!discount || parseFloat(discount) < 0 || parseFloat(discount) > 100) {
       errors.push("Discount must be between 0 and 100");
     }
+    if (!productUrl.trim()) {
+      errors.push("Product Url is required");
+    }
     if (!selectedDataset) errors.push("Please select a dataset");
     if (!category) errors.push("Please select a category");
     if (!location) errors.push("Please select a location");
@@ -236,6 +226,7 @@ const Project = () => {
         outputFormat: customOutputDescription,
         productName,
         description,
+        productUrl,
         price,
         discount,
         productImages,
@@ -250,7 +241,14 @@ const Project = () => {
       console.log("Project created:", response);
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/preview", {
+          state: {
+            name: user.username,
+            user_id: user.id,
+            projectName: project_name,
+            project_id: response.data.project_id,
+          },
+        });
       }, 1500);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -387,6 +385,20 @@ const Project = () => {
                     setDiscount("");
                   }
                 }}
+              />
+            </div>
+
+            {/* Product URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product URL *
+              </label>
+              <input
+                type="text"
+                placeholder="https://www.example.com/product"
+                value={productUrl}
+                className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                onChange={(e) => setProductUrl(e.target.value)}
               />
             </div>
 
