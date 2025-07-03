@@ -32,7 +32,7 @@ function App() {
           }
         />
         <Route
-          path="/edit"
+          path="/editor"
           element={
             <ProtectedRoute>
               <Editor />

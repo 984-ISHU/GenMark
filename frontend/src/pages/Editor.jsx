@@ -1,6 +1,5 @@
-// src/pages/Edit.jsx
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Card, 
   CardHeader, 
@@ -14,578 +13,411 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Loader2, 
-  RefreshCw, 
-  Save, 
   ArrowLeft, 
   Edit3, 
-  Image as ImageIcon, 
-  Video,
+  Image, 
   FileText,
-  Sparkles,
-  AlertCircle,
-  CheckCircle
+  Send,
+  Bot,
+  User,
+  CheckCircle,
+  X,
+  Eye,
+  Sparkles
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  getProject,
-  getProjectOutputs,
-  regenerateText,
-  regenerateImage,
-  regenerateVideo,
-  updateTextContent,
-  getRegenerationStatus,
-  getGeneratedImage,
-  triggerWorkflow
-} from '../lib/api';
-import { toast } from 'sonner';
 
 const Editor = () => {
-  const { projectId } = useParams();
+  // Mock navigation functions for demo
+  const chatEndRef = useRef(null);
+  const location = useLocation();
   const navigate = useNavigate();
-  
-  // State management
-  const [project, setProject] = useState(null);
-  const [outputs, setOutputs] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [regenerating, setRegenerating] = useState({
-    text: false,
-    image: false,
-    video: false
-  });
-  const [activeTab, setActiveTab] = useState('text');
-  
-  // Edit states
-  const [textModifications, setTextModifications] = useState('');
-  const [imageModifications, setImageModifications] = useState('');
-  const [videoModifications, setVideoModifications] = useState('');
-  const [directTextEdit, setDirectTextEdit] = useState('');
-  const [isEditingDirectly, setIsEditingDirectly] = useState(false);
-  
-  // Image preview
-  const [imagePreview, setImagePreview] = useState(null);
+  const navState = location.state;
 
-  // Load project and outputs data
+  if (!navState) {
+    navigate("/dashboard");
+    return null;
+  }
+
+  const activeTabFromNav = navState.activeTab || 'text';
+
+  const projectId = navState.project_id;
+
+  // Now use `navState` instead of hardcoded values:
+  const [project, setProject] = useState({
+    name: navState.projectName || 'Project',
+    product_name: navState.product_name || '',
+    target_audience: navState.target_audience || '',
+    output_format: navState.output_format || '',
+    status: 'completed'
+  });
+
+  const [outputs, setOutputs] = useState({
+    text: navState.currentText || 'Your generated text content will appear here...',
+    image: navState.currentImageURL || null,
+    video: null
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(activeTabFromNav);
+  
+  // Chat state
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      type: 'bot',
+      content: `Hello! I'm here to help you edit your ${activeTab} content. What changes would you like to make?`,
+      timestamp: new Date()
+    }
+  ]);
+  
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  
+  // Simulated content states for demo
+  const [editedText, setEditedText] = useState(outputs.text);
+  const [editedImage, setEditedImage] = useState(outputs.image);
+
+  // Scroll to bottom of chat
   useEffect(() => {
-    const loadProjectData = async () => {
-      try {
-        setLoading(true);
-        
-        const [projectRes, outputsRes] = await Promise.all([
-          getProject(projectId),
-          getProjectOutputs(projectId)
-        ]);
-        
-        setProject(projectRes.data);
-        setOutputs(outputsRes.data);
-        
-        // Set initial text for direct editing
-        if (outputsRes.data?.text) {
-          setDirectTextEdit(outputsRes.data.text);
-        }
-        
-        // Load image preview if available
-        if (outputsRes.data?.image) {
-          loadImagePreview(outputsRes.data.image);
-        }
-        
-      } catch (error) {
-        console.error('Error loading project data:', error);
-        toast.error('Failed to load project data');
-      } finally {
-        setLoading(false);
-      }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Handle sending message
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim()) return;
+
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: currentMessage,
+      timestamp: new Date()
     };
 
-    if (projectId) {
-      loadProjectData();
-    }
-  }, [projectId]);
+    setMessages(prev => [...prev, userMessage]);
+    setCurrentMessage('');
+    setIsGenerating(true);
 
-  // Load image preview
-  const loadImagePreview = async (imageId) => {
-    try {
-      const response = await getGeneratedImage(imageId);
-      const imageUrl = URL.createObjectURL(response.data);
-      setImagePreview(imageUrl);
-    } catch (error) {
-      console.error('Error loading image preview:', error);
-    }
-  };
-
-  // Handle text regeneration
-  const handleTextRegeneration = async () => {
-    if (!textModifications.trim()) {
-      toast.error('Please provide modification instructions');
-      return;
-    }
-
-    try {
-      setRegenerating(prev => ({ ...prev, text: true }));
-      
-      const payload = {
-        current_output: outputs.text,
-        modifications: textModifications,
-        additional_context: {
-          product_name: project.product_name,
-          target_audience: project.target_audience,
-          output_format: project.output_format
-        }
+    // Simulate AI response
+    setTimeout(() => {
+      const botResponse = {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: generateBotResponse(currentMessage, activeTab),
+        timestamp: new Date()
       };
       
-      await regenerateText(projectId, payload);
+      setMessages(prev => [...prev, botResponse]);
+      setIsGenerating(false);
       
-      // Poll for completion
-      await pollRegenerationStatus('text');
-      
-      toast.success('Text regenerated successfully');
-      setTextModifications('');
-      
-    } catch (error) {
-      console.error('Error regenerating text:', error);
-      toast.error('Failed to regenerate text');
-    } finally {
-      setRegenerating(prev => ({ ...prev, text: false }));
-    }
-  };
-
-  // Handle image regeneration
-  const handleImageRegeneration = async () => {
-    if (!imageModifications.trim()) {
-      toast.error('Please provide modification instructions');
-      return;
-    }
-
-    try {
-      setRegenerating(prev => ({ ...prev, image: true }));
-      
-      const payload = {
-        current_output: outputs.image,
-        modifications: imageModifications,
-        additional_context: {
-          product_name: project.product_name,
-          target_audience: project.target_audience,
-          output_format: project.output_format
-        }
-      };
-      
-      await regenerateImage(projectId, payload);
-      
-      // Poll for completion
-      await pollRegenerationStatus('image');
-      
-      toast.success('Image regenerated successfully');
-      setImageModifications('');
-      
-    } catch (error) {
-      console.error('Error regenerating image:', error);
-      toast.error('Failed to regenerate image');
-    } finally {
-      setRegenerating(prev => ({ ...prev, image: false }));
-    }
-  };
-
-  // Handle video regeneration
-  const handleVideoRegeneration = async () => {
-    if (!videoModifications.trim()) {
-      toast.error('Please provide modification instructions');
-      return;
-    }
-
-    try {
-      setRegenerating(prev => ({ ...prev, video: true }));
-      
-      const payload = {
-        current_output: outputs.video,
-        modifications: videoModifications,
-        additional_context: {
-          product_name: project.product_name,
-          target_audience: project.target_audience,
-          output_format: project.output_format
-        }
-      };
-      
-      await regenerateVideo(projectId, payload);
-      
-      // Poll for completion
-      await pollRegenerationStatus('video');
-      
-      toast.success('Video regenerated successfully');
-      setVideoModifications('');
-      
-    } catch (error) {
-      console.error('Error regenerating video:', error);
-      toast.error('Failed to regenerate video');
-    } finally {
-      setRegenerating(prev => ({ ...prev, video: false }));
-    }
-  };
-
-  // Handle direct text update
-  const handleDirectTextUpdate = async () => {
-    if (!directTextEdit.trim()) {
-      toast.error('Text content cannot be empty');
-      return;
-    }
-
-    try {
-      await updateTextContent(projectId, { text: directTextEdit });
-      setOutputs(prev => ({ ...prev, text: directTextEdit }));
-      setIsEditingDirectly(false);
-      toast.success('Text updated successfully');
-    } catch (error) {
-      console.error('Error updating text:', error);
-      toast.error('Failed to update text');
-    }
-  };
-
-  // Poll regeneration status
-  const pollRegenerationStatus = async (type) => {
-    const maxAttempts = 30;
-    let attempts = 0;
-    
-    while (attempts < maxAttempts) {
-      try {
-        const response = await getRegenerationStatus(projectId);
-        
-        if (response.data.status === 'completed') {
-          // Refresh outputs
-          const outputsRes = await getProjectOutputs(projectId);
-          setOutputs(outputsRes.data);
-          
-          // Refresh image preview if image was regenerated
-          if (type === 'image' && outputsRes.data?.image) {
-            loadImagePreview(outputsRes.data.image);
-          }
-          
-          return;
-        }
-        
-        if (response.data.status === 'failed') {
-          throw new Error('Regeneration failed');
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        attempts++;
-        
-      } catch (error) {
-        console.error('Error polling status:', error);
-        break;
+      // Simulate content update
+      if (activeTab === 'text') {
+        setEditedText(prev => updateTextContent(prev, currentMessage));
+      } else if (activeTab === 'image') {
+        // For demo, we'll just show a loading state
+        setTimeout(() => {
+          setEditedImage('https://via.placeholder.com/400x300/8B5CF6/FFFFFF?text=Updated+Image');
+        }, 2000);
       }
-    }
+    }, 1500);
+  };
+
+  // Generate bot response based on user input
+  const generateBotResponse = (userInput, contentType) => {
+    const responses = {
+      text: [
+        "I've updated your text content based on your request. The changes focus on making it more engaging and targeted to your audience.",
+        "Great! I've revised the text to be more compelling. The new version emphasizes key benefits and includes a stronger call-to-action.",
+        "Perfect! I've made the text more concise and impactful. The updated version should better resonate with your target audience."
+      ],
+      image: [
+        "I'm working on updating your image based on your specifications. This may take a moment to process.",
+        "I've modified the image composition and style according to your feedback. The new version should better align with your brand.",
+        "Excellent! I've enhanced the image with the changes you requested. The updated version includes better visual elements."
+      ]
+    };
     
-    throw new Error('Regeneration timed out');
+    const typeResponses = responses[contentType] || responses.text;
+    return typeResponses[Math.floor(Math.random() * typeResponses.length)];
   };
 
-  // Handle complete regeneration
-  const handleCompleteRegeneration = async () => {
-    try {
-      setRegenerating({ text: true, image: true, video: true });
-      await triggerWorkflow(projectId, 'regenerate');
-      
-      // Poll for completion
-      await pollRegenerationStatus('complete');
-      
-      toast.success('All content regenerated successfully');
-    } catch (error) {
-      console.error('Error in complete regeneration:', error);
-      toast.error('Failed to regenerate content');
-    } finally {
-      setRegenerating({ text: false, image: false, video: false });
+  // Update text content based on user input
+  const updateTextContent = (originalText, userInput) => {
+    // Simple simulation - in reality, this would call an AI service
+    if (userInput.toLowerCase().includes('shorter')) {
+      return originalText.substring(0, Math.floor(originalText.length * 0.7)) + '...';
+    } else if (userInput.toLowerCase().includes('longer')) {
+      return originalText + '\n\nAdditional content has been added to provide more detail and context for your audience.';
+    } else {
+      return originalText.replace(/\b\w+\b/g, (word, index) => {
+        return Math.random() > 0.9 ? word.toUpperCase() : word;
+      });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  // Handle tab change
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    const welcomeMessage = {
+      id: Date.now(),
+      type: 'bot',
+      content: `Now editing ${newTab} content. What changes would you like to make?`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, welcomeMessage]);
+  };
 
-  if (!project || !outputs) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <h2 className="text-xl font-semibold mb-2">Project Not Found</h2>
-          <p className="text-gray-600 mb-4">The project you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate('/')}>Go Back Home</Button>
-        </div>
-      </div>
-    );
-  }
+  // Handle apply changes
+  const handleApplyChanges = () => {
+    setOutputs(prev => ({
+      ...prev,
+      text: editedText,
+      image: editedImage
+    }));
+    
+    const confirmMessage = {
+      id: Date.now(),
+      type: 'bot',
+      content: 'Changes applied successfully! Your content has been updated.',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, confirmMessage]);
+  };
+
+  // Handle preview toggle
+  const togglePreview = () => {
+    setPreviewMode(!previewMode);
+  };
+
+  // Handle back to preview
+  const handleBackToPreview = () => {
+    navigate(`/preview`, { 
+      state: { 
+        ...navState,
+        currentText: editedText,
+        currentImageURL: editedImage
+      } 
+    });
+  };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(`/project/${projectId}`)}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Project
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
-            <p className="text-gray-600">Edit Marketing Content</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{project.status}</Badge>
-          <Button
-            onClick={handleCompleteRegeneration}
-            disabled={regenerating.text || regenerating.image || regenerating.video}
-            className="flex items-center gap-2"
-          >
-            {regenerating.text || regenerating.image || regenerating.video ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            Regenerate All
-          </Button>
-        </div>
-      </div>
-
-      {/* Project Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-50 to-indigo-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 pl-2">
             <div>
-              <Label className="text-sm font-medium">Product</Label>
-              <p className="text-gray-700">{project.product_name}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Target Audience</Label>
-              <p className="text-gray-700">{project.target_audience}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Output Format</Label>
-              <p className="text-gray-700">{project.output_format}</p>
+              <h1 className="text-3xl font-bold text-gray-800">{project.name}</h1>
+              <p className="text-gray-600">AI-Powered Content Editor</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-3 pr-1">
+            <Button
+              variant="ghost"
+              onClick={handleBackToPreview}
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Preview
+            </Button>
+          </div>
+        </div>
 
-      {/* Content Editor */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Edit3 className="w-5 h-5" />
-            Content Editor
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="text" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Text
-              </TabsTrigger>
-              <TabsTrigger value="image" className="flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
-                Image
-              </TabsTrigger>
-              <TabsTrigger value="video" className="flex items-center gap-2">
-                <Video className="w-4 h-4" />
-                Video
-              </TabsTrigger>
-            </TabsList>
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
+          {/* Content Panel */}
+          <Card className="bg-white/90 border border-purple-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-purple-700">
+                <Edit3 className="w-5 h-5" />
+                Content Editor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-full overflow-hidden">
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="text" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Text
+                  </TabsTrigger>
+                  <TabsTrigger value="image" className="flex items-center gap-2">
+                    <Image className="w-4 h-4" />
+                    Image
+                  </TabsTrigger>
+                </TabsList>
 
-            {/* Text Tab */}
-            <TabsContent value="text" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">Current Text Content</Label>
-                  {isEditingDirectly ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={directTextEdit}
-                        onChange={(e) => setDirectTextEdit(e.target.value)}
-                        rows={6}
-                        className="mt-2"
-                      />
+                {/* Text Tab */}
+                <TabsContent value="text" className="h-96 overflow-y-auto">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-700">Current Text Content</h3>
                       <div className="flex gap-2">
-                        <Button onClick={handleDirectTextUpdate} className="flex items-center gap-2">
-                          <Save className="w-4 h-4" />
-                          Save Changes
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setIsEditingDirectly(false);
-                            setDirectTextEdit(outputs.text);
-                          }}
+                        <Button
+                          onClick={handleApplyChanges}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
                         >
-                          Cancel
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Apply Changes
                         </Button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                      <p className="text-gray-700 whitespace-pre-wrap">{outputs.text}</p>
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsEditingDirectly(true)}
-                        className="mt-2 flex items-center gap-2"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit Directly
-                      </Button>
+                    
+                    <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {previewMode ? outputs.text : editedText}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                </TabsContent>
 
-                <div>
-                  <Label htmlFor="text-modifications" className="text-sm font-medium">
-                    AI Regeneration Instructions
-                  </Label>
-                  <Textarea
-                    id="text-modifications"
-                    placeholder="Describe what changes you want to make to the text content..."
-                    value={textModifications}
-                    onChange={(e) => setTextModifications(e.target.value)}
-                    rows={4}
-                    className="mt-2"
-                  />
-                  <Button
-                    onClick={handleTextRegeneration}
-                    disabled={regenerating.text || !textModifications.trim()}
-                    className="mt-2 flex items-center gap-2"
+                {/* Image Tab */}
+                <TabsContent value="image" className="h-96 overflow-y-auto">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-700">Current Image</h3>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleApplyChanges}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Apply Changes
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      {(previewMode ? outputs.image : editedImage) ? (
+                        <img
+                          src={previewMode ? outputs.image : editedImage}
+                          alt="Generated content"
+                          className="w-full h-auto rounded-lg shadow-md"
+                        />
+                      ) : (
+                        <div className="h-48 flex items-center justify-center text-gray-500">
+                          <div className="text-center">
+                            <Image className="w-12 h-12 mx-auto mb-2" />
+                            <p>No image generated yet</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Chat Panel */}
+          <Card className="bg-white/90 border border-indigo-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-indigo-700">
+                <Bot className="w-5 h-5" />
+                AI Assistant
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-full flex flex-col">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {regenerating.text ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    Regenerate Text
-                  </Button>
-                </div>
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        message.type === 'user'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {message.type === 'bot' && <Bot className="w-4 h-4 mt-1 flex-shrink-0" />}
+                        {message.type === 'user' && <User className="w-4 h-4 mt-1 flex-shrink-0" />}
+                        <div className="text-sm">{message.content}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {isGenerating && (
+                  <div className="flex justify-start">
+                    <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800">
+                      <div className="flex items-center gap-2">
+                        <Bot className="w-4 h-4" />
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
-            </TabsContent>
 
-            {/* Image Tab */}
-            <TabsContent value="image" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">Current Image</Label>
-                  {imagePreview ? (
-                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                      <img
-                        src={imagePreview}
-                        alt="Generated content"
-                        className="max-w-full h-auto rounded-lg"
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-2 p-8 bg-gray-50 rounded-lg text-center">
-                      <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500">No image generated yet</p>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="image-modifications" className="text-sm font-medium">
-                    AI Regeneration Instructions
-                  </Label>
-                  <Textarea
-                    id="image-modifications"
-                    placeholder="Describe what changes you want to make to the image..."
-                    value={imageModifications}
-                    onChange={(e) => setImageModifications(e.target.value)}
-                    rows={4}
-                    className="mt-2"
-                  />
-                  <Button
-                    onClick={handleImageRegeneration}
-                    disabled={regenerating.image || !imageModifications.trim()}
-                    className="mt-2 flex items-center gap-2"
-                  >
-                    {regenerating.image ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    Regenerate Image
-                  </Button>
-                </div>
+              {/* Input */}
+              <div className="flex gap-2">
+                <Input
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  placeholder={`Describe changes for ${activeTab} content...`}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!currentMessage.trim() || isGenerating}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
-            </TabsContent>
 
-            {/* Video Tab */}
-            <TabsContent value="video" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">Current Video</Label>
-                  {outputs.video ? (
-                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                      <video
-                        src={outputs.video}
-                        controls
-                        className="max-w-full h-auto rounded-lg"
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-2 p-8 bg-gray-50 rounded-lg text-center">
-                      <Video className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-500">No video generated yet</p>
-                    </div>
-                  )}
-                </div>
-
-                <Alert>
-                  <AlertCircle className="w-4 h-4" />
-                  <AlertDescription>
-                    Video generation is currently in development. This feature will be available soon.
-                  </AlertDescription>
-                </Alert>
-
-                <div>
-                  <Label htmlFor="video-modifications" className="text-sm font-medium">
-                    AI Regeneration Instructions
-                  </Label>
-                  <Textarea
-                    id="video-modifications"
-                    placeholder="Describe what changes you want to make to the video..."
-                    value={videoModifications}
-                    onChange={(e) => setVideoModifications(e.target.value)}
-                    rows={4}
-                    className="mt-2"
-                    disabled
-                  />
-                  <Button
-                    onClick={handleVideoRegeneration}
-                    disabled={true}
-                    className="mt-2 flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Regenerate Video (Coming Soon)
-                  </Button>
-                </div>
+              {/* Quick Actions */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentMessage("Make it shorter and more concise");
+                    setTimeout(handleSendMessage, 100);
+                  }}
+                  className="text-xs"
+                >
+                  Make it shorter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentMessage("Make it more engaging and compelling");
+                    setTimeout(handleSendMessage, 100);
+                  }}
+                  className="text-xs"
+                >
+                  More engaging
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentMessage("Add more details and context");
+                    setTimeout(handleSendMessage, 100);
+                  }}
+                  className="text-xs"
+                >
+                  Add details
+                </Button>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Generation Status */}
-      {(regenerating.text || regenerating.image || regenerating.video) && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-blue-600">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Regenerating content...</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
