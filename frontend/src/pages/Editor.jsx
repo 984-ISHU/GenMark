@@ -1,422 +1,498 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Loader2, 
   ArrowLeft, 
-  Edit3, 
-  Image, 
-  FileText,
-  Send,
-  Bot,
-  User,
-  CheckCircle,
-  X,
-  Eye,
-  Sparkles
-} from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+  Send, 
+  Save, 
+  RefreshCw, 
+  Image as ImageIcon, 
+  FileText, 
+  Wand2,
+  Copy,
+  Download
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  getSpecificProject,
+  getGeneratedOutput,
+  getGeneratedImageURL,
+} from "@/lib/api";
+import API from "@/lib/api";
+
+// Add these API functions to your api.js file:
+// export const editOutput = (payload) => API.post("/edit_output", payload);
+// export const saveOutput = (payload) => API.post("/save_output", payload);
 
 const Editor = () => {
-  // Mock navigation functions for demo
-  const chatEndRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const navState = location.state;
+  const state = location.state;
 
-  if (!navState) {
-    navigate("/dashboard");
-    return null;
-  }
+  // Content state
+  const [textOutput, setTextOutput] = useState("");
+  const [imageURL, setImageURL] = useState("");
+  const [originalText, setOriginalText] = useState("");
+  const [originalImageId, setOriginalImageId] = useState("");
+  const [projectId, setProjectId] = useState("");
 
-  const activeTabFromNav = navState.activeTab || 'text';
+  // UI state
+  const [activeTab, setActiveTab] = useState("text");
+  const [instruction, setInstruction] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setSaving] = useState(false);
 
-  const projectId = navState.project_id;
-
-  // Now use `navState` instead of hardcoded values:
-  const [project, setProject] = useState({
-    name: navState.projectName || 'Project',
-    product_name: navState.product_name || '',
-    target_audience: navState.target_audience || '',
-    output_format: navState.output_format || '',
-    status: 'completed'
-  });
-
-  const [outputs, setOutputs] = useState({
-    text: navState.currentText || 'Your generated text content will appear here...',
-    image: navState.currentImageURL || null,
-    video: null
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(activeTabFromNav);
-  
-  // Chat state
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      content: `Hello! I'm here to help you edit your ${activeTab} content. What changes would you like to make?`,
-      timestamp: new Date()
-    }
-  ]);
-  
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
-  
-  // Simulated content states for demo
-  const [editedText, setEditedText] = useState(outputs.text);
-  const [editedImage, setEditedImage] = useState(outputs.image);
-
-  // Scroll to bottom of chat
+  // Load initial data
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (!state) {
+      navigate("/dashboard");
+      return;
+    }
 
-  // Handle sending message
-  const handleSendMessage = async () => {
-    if (!currentMessage.trim()) return;
-
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: currentMessage,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setCurrentMessage('');
-    setIsGenerating(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: generateBotResponse(currentMessage, activeTab),
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, botResponse]);
-      setIsGenerating(false);
-      
-      // Simulate content update
-      if (activeTab === 'text') {
-        setEditedText(prev => updateTextContent(prev, currentMessage));
-      } else if (activeTab === 'image') {
-        // For demo, we'll just show a loading state
-        setTimeout(() => {
-          setEditedImage('https://via.placeholder.com/400x300/8B5CF6/FFFFFF?text=Updated+Image');
-        }, 2000);
-      }
-    }, 1500);
-  };
-
-  // Generate bot response based on user input
-  const generateBotResponse = (userInput, contentType) => {
-    const responses = {
-      text: [
-        "I've updated your text content based on your request. The changes focus on making it more engaging and targeted to your audience.",
-        "Great! I've revised the text to be more compelling. The new version emphasizes key benefits and includes a stronger call-to-action.",
-        "Perfect! I've made the text more concise and impactful. The updated version should better resonate with your target audience."
-      ],
-      image: [
-        "I'm working on updating your image based on your specifications. This may take a moment to process.",
-        "I've modified the image composition and style according to your feedback. The new version should better align with your brand.",
-        "Excellent! I've enhanced the image with the changes you requested. The updated version includes better visual elements."
-      ]
-    };
+    setProjectId(state.project_id);
+    setActiveTab(state.activeTab || "text");
     
-    const typeResponses = responses[contentType] || responses.text;
-    return typeResponses[Math.floor(Math.random() * typeResponses.length)];
-  };
+    // Set initial content from state if available
+    if (state.currentText) {
+      setTextOutput(state.currentText);
+      setOriginalText(state.currentText);
+    }
+    if (state.currentImageURL) {
+      setImageURL(state.currentImageURL);
+    }
 
-  // Update text content based on user input
-  const updateTextContent = (originalText, userInput) => {
-    // Simple simulation - in reality, this would call an AI service
-    if (userInput.toLowerCase().includes('shorter')) {
-      return originalText.substring(0, Math.floor(originalText.length * 0.7)) + '...';
-    } else if (userInput.toLowerCase().includes('longer')) {
-      return originalText + '\n\nAdditional content has been added to provide more detail and context for your audience.';
-    } else {
-      return originalText.replace(/\b\w+\b/g, (word, index) => {
-        return Math.random() > 0.9 ? word.toUpperCase() : word;
-      });
+    loadProjectData();
+  }, [state, navigate]);
+
+  const loadProjectData = async () => {
+    try {
+      const projectRes = await getSpecificProject(state.user_id, state.project_id);
+      const generated_outputs_id = projectRes.data.generated_outputs_id;
+      
+      if (generated_outputs_id) {
+        const outputRes = await getGeneratedOutput(generated_outputs_id);
+        const { text, image } = outputRes.data;
+
+        if (text) {
+          setTextOutput(text);
+          setOriginalText(text);
+        }
+
+        if (image) {
+          setOriginalImageId(image);
+          setImageURL(getGeneratedImageURL(image));
+        }
+      }
+    } catch (error) {
+      console.error("Error loading project data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle tab change
-  const handleTabChange = (newTab) => {
-    setActiveTab(newTab);
-    const welcomeMessage = {
-      id: Date.now(),
-      type: 'bot',
-      content: `Now editing ${newTab} content. What changes would you like to make?`,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, welcomeMessage]);
+  const handleEditContent = async () => {
+    if (!instruction.trim()) return;
+
+    setIsEditing(true);
+    try {
+      const editRequest = {
+        project_id: projectId,
+        content_type: activeTab,
+        instruction: instruction,
+        ...(activeTab === "text" 
+          ? { original_text: originalText }
+          : { original_image_id: originalImageId }
+        )
+      };
+
+      const response = await API.post("/edit_output", editRequest);
+      
+      if (activeTab === "text") {
+        setTextOutput(response.data.text);
+      } else {
+        const newImageId = response.data.image_id;
+        setImageURL(getGeneratedImageURL(newImageId));
+        setOriginalImageId(newImageId);
+      }
+      
+      setInstruction("");
+    } catch (error) {
+      console.error("Error editing content:", error);
+      alert("Failed to edit content. Please try again.");
+    } finally {
+      setIsEditing(false);
+    }
   };
 
-  // Handle apply changes
-  const handleApplyChanges = () => {
-    setOutputs(prev => ({
-      ...prev,
-      text: editedText,
-      image: editedImage
-    }));
-    
-    const confirmMessage = {
-      id: Date.now(),
-      type: 'bot',
-      content: 'Changes applied successfully! Your content has been updated.',
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, confirmMessage]);
+  const handleSaveChanges = async () => {
+    setSaving(true);
+    try {
+      const saveRequest = {
+        project_id: projectId,
+        text: textOutput,
+        image_id: originalImageId
+      };
+
+      await API.post("/save_output", saveRequest);
+      
+      // Navigate back to preview with updated state
+      navigate("/preview", {
+        state: {
+          ...state,
+          currentText: textOutput,
+          currentImageURL: imageURL
+        }
+      });
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      alert("Failed to save changes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Handle preview toggle
-  const togglePreview = () => {
-    setPreviewMode(!previewMode);
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(textOutput);
   };
 
-  // Handle back to preview
-  const handleBackToPreview = () => {
-    navigate(`/preview`, { 
-      state: { 
-        ...navState,
-        currentText: editedText,
-        currentImageURL: editedImage
-      } 
-    });
+  const handleDownloadImage = () => {
+    if (imageURL) {
+      const link = document.createElement('a');
+      link.href = imageURL;
+      link.download = 'edited-image.png';
+      link.click();
+    }
   };
+
+  const handleResetToOriginal = () => {
+    if (activeTab === "text") {
+      setTextOutput(originalText);
+    } else {
+      // For images, we'd need to keep track of original image ID
+      // This is a simplified reset - in production you might want to store original image separately
+      loadProjectData();
+    }
+  };
+
+  if (!state) return null;
+
+  const { name, projectName } = state;
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-50 to-indigo-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 pl-2">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">{project.name}</h1>
-              <p className="text-gray-600">AI-Powered Content Editor</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 pr-1">
-            <Button
-              variant="ghost"
-              onClick={handleBackToPreview}
-              className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Preview
-            </Button>
-          </div>
+    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-200 via-pink-100 to-indigo-100 font-sans p-6 overflow-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
+            GenMark Editor
+          </h1>
+          <p className="text-purple-600 font-medium mt-2">
+            Editing: {projectName}
+          </p>
         </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => navigate("/preview", { state })}
+            variant="outline"
+            className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Preview
+          </Button>
+          <Button
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-2 px-6 rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-2"
+          >
+            {isSaving ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save Changes
+          </Button>
+        </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
-          {/* Content Panel */}
-          <Card className="bg-white/90 border border-purple-200 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-purple-700">
-                <Edit3 className="w-5 h-5" />
-                Content Editor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-full overflow-hidden">
-              <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="text" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Text
-                  </TabsTrigger>
-                  <TabsTrigger value="image" className="flex items-center gap-2">
-                    <Image className="w-4 h-4" />
-                    Image
-                  </TabsTrigger>
-                </TabsList>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="text" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Text Editor
+            </TabsTrigger>
+            <TabsTrigger value="image" className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Image Editor
+            </TabsTrigger>
+          </TabsList>
 
-                {/* Text Tab */}
-                <TabsContent value="text" className="h-96 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-700">Current Text Content</h3>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleApplyChanges}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Apply Changes
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                      <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {previewMode ? outputs.text : editedText}
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* Image Tab */}
-                <TabsContent value="image" className="h-96 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-700">Current Image</h3>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleApplyChanges}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Apply Changes
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                      {(previewMode ? outputs.image : editedImage) ? (
-                        <img
-                          src={previewMode ? outputs.image : editedImage}
-                          alt="Generated content"
-                          className="w-full h-auto rounded-lg shadow-md"
-                        />
-                      ) : (
-                        <div className="h-48 flex items-center justify-center text-gray-500">
-                          <div className="text-center">
-                            <Image className="w-12 h-12 mx-auto mb-2" />
-                            <p>No image generated yet</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Chat Panel */}
-          <Card className="bg-white/90 border border-indigo-200 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-indigo-700">
-                <Bot className="w-5 h-5" />
-                AI Assistant
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-full flex flex-col">
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.type === 'user'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
+          {/* Text Editor Tab */}
+          <TabsContent value="text" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Text Content */}
+              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Current Text
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyText}
+                      className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
                     >
-                      <div className="flex items-start gap-2">
-                        {message.type === 'bot' && <Bot className="w-4 h-4 mt-1 flex-shrink-0" />}
-                        {message.type === 'user' && <User className="w-4 h-4 mt-1 flex-shrink-0" />}
-                        <div className="text-sm">{message.content}</div>
-                      </div>
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetToOriginal}
+                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Reset
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="h-96">
+                  <Textarea
+                    value={textOutput}
+                    onChange={(e) => setTextOutput(e.target.value)}
+                    placeholder="Generated text will appear here..."
+                    className="h-full resize-none border-indigo-200 focus:border-indigo-400 focus:ring-indigo-300"
+                    disabled={isLoading}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Text Edit Controls */}
+              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                    <Wand2 className="w-5 h-5" />
+                    AI Text Editor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Tell the AI how to modify your text:
+                    </label>
+                    <Textarea
+                      value={instruction}
+                      onChange={(e) => setInstruction(e.target.value)}
+                      placeholder="e.g., Make it more professional, add emojis, make it shorter, change the tone to friendly..."
+                      className="h-32 resize-none border-purple-200 focus:border-purple-400 focus:ring-purple-300"
+                      disabled={isEditing}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleEditContent}
+                    disabled={isEditing || !instruction.trim()}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    {isEditing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Editing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Apply Changes
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Quick Actions */}
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Make it more professional and formal")}
+                        className="text-xs"
+                      >
+                        Make Professional
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Add emojis and make it more engaging")}
+                        className="text-xs"
+                      >
+                        Add Emojis
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Make it shorter and more concise")}
+                        className="text-xs"
+                      >
+                        Make Shorter
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Make it longer with more details")}
+                        className="text-xs"
+                      >
+                        Add Details
+                      </Button>
                     </div>
                   </div>
-                ))}
-                
-                {isGenerating && (
-                  <div className="flex justify-start">
-                    <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100 text-gray-800">
-                      <div className="flex items-center gap-2">
-                        <Bot className="w-4 h-4" />
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                        </div>
-                      </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Image Editor Tab */}
+          <TabsContent value="image" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Image Content */}
+              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Current Image
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadImage}
+                      disabled={!imageURL}
+                      className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetToOriginal}
+                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Reset
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="h-96 flex justify-center items-center">
+                  {isLoading ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                      <p className="text-purple-600">Loading image...</p>
+                    </div>
+                  ) : imageURL ? (
+                    <div className="h-full w-full">
+                      <img
+                        src={imageURL}
+                        alt="Generated content"
+                        className="rounded-xl w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500 italic">No image available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Image Edit Controls */}
+              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                    <Wand2 className="w-5 h-5" />
+                    AI Image Editor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Tell the AI how to modify your image:
+                    </label>
+                    <Textarea
+                      value={instruction}
+                      onChange={(e) => setInstruction(e.target.value)}
+                      placeholder="e.g., Change the background color to blue, add text overlay, make it brighter, remove the logo..."
+                      className="h-32 resize-none border-indigo-200 focus:border-indigo-400 focus:ring-indigo-300"
+                      disabled={isEditing}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleEditContent}
+                    disabled={isEditing || !instruction.trim() || !imageURL}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    {isEditing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Editing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Apply Changes
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Quick Actions */}
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Make the image brighter and more vibrant")}
+                        className="text-xs"
+                      >
+                        Brighten
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Add a professional clean background")}
+                        className="text-xs"
+                      >
+                        Clean Background
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Add text overlay with the product name")}
+                        className="text-xs"
+                      >
+                        Add Text
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInstruction("Change the style to be more modern and minimalist")}
+                        className="text-xs"
+                      >
+                        Modern Style
+                      </Button>
                     </div>
                   </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="flex gap-2">
-                <Input
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  placeholder={`Describe changes for ${activeTab} content...`}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!currentMessage.trim() || isGenerating}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCurrentMessage("Make it shorter and more concise");
-                    setTimeout(handleSendMessage, 100);
-                  }}
-                  className="text-xs"
-                >
-                  Make it shorter
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCurrentMessage("Make it more engaging and compelling");
-                    setTimeout(handleSendMessage, 100);
-                  }}
-                  className="text-xs"
-                >
-                  More engaging
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCurrentMessage("Add more details and context");
-                    setTimeout(handleSendMessage, 100);
-                  }}
-                  className="text-xs"
-                >
-                  Add details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
