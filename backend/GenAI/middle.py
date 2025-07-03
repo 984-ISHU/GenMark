@@ -1,3 +1,7 @@
+from bson import ObjectId
+from app.db import get_database
+from google.genai.types import Part, Content, Blob
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 import aiohttp
 import os
 import requests
@@ -24,6 +28,7 @@ client = gai.Client(api_key=GOOGLE_API_KEY)
 class AgentState(TypedDict):
     user_id: str
     project_id: str
+    product_id: str
     name: str  # project_name
     product_name: str
     description: str
@@ -136,7 +141,7 @@ def generate_prompt(state: AgentState) -> dict:
             "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
             json=data,
-            timeout=15
+            timeout=45
         )
         response.raise_for_status()
         try:
@@ -225,12 +230,7 @@ def text_agent(state: AgentState) -> dict:
         return {"text_output": None}
 
 
-
 async def image_agent(state: AgentState) -> dict:
-    """
-    Helps to generate images based on the prompt provided by the prompt generator
-    """
-
     print("Inside Image Generator")
 
     if not state.get("image_prompt"):
@@ -239,32 +239,58 @@ async def image_agent(state: AgentState) -> dict:
 
     prompt = state["image_prompt"]
     project_id = state.get("project_id")
-    print(f"Got project id: {project_id}")
+    image_ids = state.get("image_ids", [])
+    print("Image IDs:", image_ids)
 
     try:
-        print("Generating Image...")
+        db = get_database()
+        await db.command("ping")
+        print("Database connection verified")
+        bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
+
+        parts = []
+
+        # Add the image prompt as a Part
+        parts.append(Part(text=prompt))
+
+        for image_id in image_ids:
+            try:
+                file_obj = await bucket.open_download_stream(ObjectId(image_id))
+                image_data = await file_obj.read()
+                await file_obj.close()
+
+                # Add image as a Part (must be Blob inside inline_data)
+                parts.append(
+                    Part(
+                        inline_data=Blob(
+                            mime_type="image/jpeg",
+                            data=image_data
+                        )
+                    )
+                )
+                print(f"✅ Added image ID {image_id}")
+            except Exception as e:
+                print(f"⚠️ Failed to load image {image_id}: {e}")
+
+        contents = Content(parts=parts)
+
+        print("Generating Image with prompt and image(s)...")
         response = client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
-            contents=prompt,
+            contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=['TEXT', 'IMAGE']
             )
         )
-        print("Image generation completed")
 
-        # Extract inline image bytes from first image part
         for i, part in enumerate(response.candidates[0].content.parts):
-            print(f"Processing part {i}")
-            if part.inline_data is not None:
-                print(f"Found inline data in part {i}")
+            if part.inline_data:
                 image_bytes = BytesIO(part.inline_data.data)
                 image_bytes.seek(0)
-                print(f"Returning image_bytes: {image_bytes is not None}")
+                print("✅ Image generated successfully")
                 return {"image_bytes": image_bytes, "project_id": project_id}
-            else:
-                print(f"Part {i} has no inline data")
 
-        print("No valid image part found")
+        print("❌ No valid image part found in response")
         return {"image_bytes": None, "project_id": project_id}
 
     except Exception as e:
@@ -272,9 +298,6 @@ async def image_agent(state: AgentState) -> dict:
         return {"image_bytes": None, "project_id": project_id}
 
 # ----- IMAGE UPLOAD AGENT -----
-
-
-
 async def image_upload_agent(state: dict) -> dict:
     """
     Helps to upload the generated image to the database
@@ -282,6 +305,7 @@ async def image_upload_agent(state: dict) -> dict:
     print("Inside Image Upload Agent")
     image_bytes: Optional[BytesIO] = state.get("image_bytes")
     project_id = state.get("project_id")
+    product_name = state.get("product_name")
 
     if not image_bytes or not project_id:
         print("No image data or project ID, skipping upload")
@@ -296,14 +320,14 @@ async def image_upload_agent(state: dict) -> dict:
             data.add_field(
                 name="image_output",
                 value=image_bytes.getvalue(),
-                filename="generated.jpg",
+                filename=f"{product_name}.jpg",
                 content_type="image/jpeg"
             )
             async with session.put(api_url, data=data) as res:
                 text = await res.text()
                 if res.status == 200:
                     print("✅ Image uploaded to server")
-                    return {"image_output": "generated.jpg"}
+                    return {"image_output": f"{product_name}.jpg"}
                 else:
                     print(f"❌ Upload failed: {res.status}, {text}")
                     return {"image_output": None}
