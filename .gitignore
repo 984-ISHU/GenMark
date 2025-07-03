@@ -7,7 +7,7 @@ env/
 venv/
 *.env
 .env
-
+*.ipynb
 # === NODE (React frontend) ===
 node_modules/
 dist/
