@@ -255,22 +255,28 @@ async def image_agent(state: AgentState) -> dict:
 
         for image_id in image_ids:
             try:
-                file_obj = await bucket.open_download_stream(ObjectId(image_id))
+                obj_id = ObjectId(image_id)
+                cursor = await bucket.find({"_id": obj_id}).to_list(length=1)
+
+                if not cursor:
+                    print(f"⚠️ No file found in GridFS for ID {image_id}, skipping")
+                    continue
+
+                file_obj = await bucket.open_download_stream(obj_id)
                 image_data = await file_obj.read()
                 await file_obj.close()
 
-                # Add image as a Part (must be Blob inside inline_data)
-                parts.append(
-                    Part(
-                        inline_data=Blob(
-                            mime_type="image/jpeg",
-                            data=image_data
-                        )
-                    )
-                )
-                print(f"✅ Added image ID {image_id}")
+                contents.append({
+                    "inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": image_data
+                    }
+                })
+                print(f"✅ Loaded image {image_id}")
+
             except Exception as e:
                 print(f"⚠️ Failed to load image {image_id}: {e}")
+
 
         contents = Content(parts=parts)
 
@@ -296,6 +302,9 @@ async def image_agent(state: AgentState) -> dict:
     except Exception as e:
         print(f"❌ Image generation failed: {e}")
         return {"image_bytes": None, "project_id": project_id}
+    
+
+
 
 # ----- IMAGE UPLOAD AGENT -----
 async def image_upload_agent(state: dict) -> dict:

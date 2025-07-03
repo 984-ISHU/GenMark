@@ -120,7 +120,7 @@ const PreviewPage = () => {
               🖼️ Image Output
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex justify-center items-center h-64">
+          <CardContent className="flex justify-center items-center p-4">
             {imageLoading ? (
               <p className="text-purple-600 animate-pulse">
                 ⏳ Generating image...
@@ -129,7 +129,7 @@ const PreviewPage = () => {
               <img
                 src={imageURL}
                 alt="Generated"
-                className="rounded-xl w-full object-cover"
+                className="rounded-xl object-contain max-w-full h-auto"
               />
             ) : (
               <p className="text-gray-500 italic">
