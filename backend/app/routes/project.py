@@ -32,6 +32,13 @@ def convert_object_ids(doc):
             doc[key] = str(value)
     return doc
 
+async def fetch_product_image_ids(product_id: str, db: AsyncIOMotorDatabase) -> list:
+    product = await db["Products"].find_one({"_id": ObjectId(product_id)})
+    if not product:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return product.get("images", [])
+
 
 
 # ----------- Routes ----------- #
@@ -81,7 +88,7 @@ async def create_project_and_product(
         "name": name,
         "target_audience": target_audience,
         "output_format": output_format,
-        "product_id": str(product_result.inserted_id),
+        "product_id": ObjectId(product_result.inserted_id),
         "generated_outputs_id": None,
         "status": "in_progress",
         "created_at": datetime.utcnow()
@@ -89,11 +96,12 @@ async def create_project_and_product(
     
     project_result = await db["Projects"].insert_one(project_doc)
     project_id = project_result.inserted_id 
+    print("\n\nProject ID After inserting : ", project_id)
 
     # Update product with project_id
     await db["Products"].update_one(
-        {"_id": project_id},
-        {"$set": {"project_id": str(project_result.inserted_id)}}
+        {"_id": product_result.inserted_id},
+        {"$set": {"project_id": ObjectId(project_id)}}
     )
 
     generated_output = await db["GeneratedOutput"].find_one({"project_id": ObjectId(project_id)})
@@ -105,7 +113,8 @@ async def create_project_and_product(
     
     project_input_data = {
         "user_id": user_id,
-        "project_id": str(project_result.inserted_id),
+        "project_id": str(project_id),
+        "product_id":str(product_result.inserted_id),
         "name": name,
         "product_name": product_name,
         "description": description,
@@ -249,6 +258,20 @@ async def stream_image(file_id: str, db: AsyncIOMotorDatabase = Depends(get_data
         return StreamingResponse(stream, media_type="image/jpeg")
     except:
         raise HTTPException(status_code=404, detail="Image not found")
+    
+
+@router.get("/uploaded/image/ids/{product_id}")
+async def get_image_ids(product_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    product = await db["Products"].find_one({
+        "_id": ObjectId(product_id)
+    })
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    image_ids = product.get("images", [])
+
+    return image_ids
 
 
 # Delete Product-Project

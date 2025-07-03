@@ -1,41 +1,51 @@
-import { useState, useEffect } from 'react';
-import { User, Mail, Lock, Edit2, Save, X, Eye, EyeOff, LogOut } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { 
-  getUserProfile, 
-  updateUsername, 
-  changePassword, 
-  logoutUser 
-} from '../lib/api';
+import { useState, useEffect } from "react";
+import {
+  User,
+  Mail,
+  Lock,
+  Edit2,
+  Save,
+  X,
+  Eye,
+  EyeOff,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "../auth/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  getUserProfile,
+  updateUsername,
+  changePassword,
+  logoutUser,
+} from "../lib/api";
 
 const Profile = () => {
   const { user: contextUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [user, setUser] = useState({ username: '', email: '' });
+  const [user, setUser] = useState({ username: "", email: "" });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   // Username editing state
   const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [newUsername, setNewUsername] = useState('');
+  const [newUsername, setNewUsername] = useState("");
   const [usernameLoading, setUsernameLoading] = useState(false);
-    
+
   // Password change state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
-    confirm: false
+    confirm: false,
   });
 
   // Initialize user data from context or fetch from API
@@ -43,11 +53,11 @@ const Profile = () => {
     if (contextUser && contextUser.email) {
       // If user data is available in context, use it
       setUser({
-        username: contextUser.username || contextUser.user?.username || '',
-        email: contextUser.email || contextUser.user?.email || ''
+        username: contextUser.username || contextUser.user?.username || "",
+        email: contextUser.email || contextUser.user?.email || "",
       });
 
-      setNewUsername(contextUser.username || contextUser.user?.username || '');
+      setNewUsername(contextUser.username || contextUser.user?.username || "");
       setLoading(false);
     } else {
       // Otherwise, fetch from API
@@ -59,21 +69,21 @@ const Profile = () => {
     try {
       const response = await getUserProfile();
       const userData = response.data;
-      
-      console.log('Frontend - API Response:', userData); // Debug line
-      console.log('Frontend - Email field:', userData.email); // Debug line
-      
+
+      console.log("Frontend - API Response:", userData); // Debug line
+      console.log("Frontend - Email field:", userData.email); // Debug line
+
       setUser(userData);
       setNewUsername(userData.username);
     } catch (err) {
-      console.error('Profile fetch error:', err);
-      
+      console.error("Profile fetch error:", err);
+
       if (err.response?.status === 401) {
         // Token expired or invalid, redirect to login
-        navigate('/login');
+        navigate("/login");
       } else {
-        setError('Failed to load profile');
-        toast.error('Failed to load profile');
+        setError("Failed to load profile");
+        toast.error("Failed to load profile");
       }
     } finally {
       setLoading(false);
@@ -83,24 +93,24 @@ const Profile = () => {
   const handleUsernameEdit = () => {
     setIsEditingUsername(true);
     setNewUsername(user.username);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
   };
 
   const handleUsernameSave = async () => {
     if (newUsername.trim().length < 3) {
-      setError('Username must be at least 3 characters long');
-      toast.error('Username must be at least 3 characters long');
+      setError("Username must be at least 3 characters long");
+      toast.error("Username must be at least 3 characters long");
       return;
     }
-    
+
     if (newUsername === user.username) {
       setIsEditingUsername(false);
       return;
     }
 
     setUsernameLoading(true);
-    setError('');
+    setError("");
 
     try {
       const response = await updateUsername({ username: newUsername.trim() });
@@ -108,16 +118,19 @@ const Profile = () => {
 
       setUser({ ...user, username: newUsername.trim() });
       setIsEditingUsername(false);
-      setSuccess('Username updated successfully!');
-      toast.success('Username updated successfully!');
-      
+      setSuccess("Username updated successfully!");
+      toast.success("Username updated successfully!");
+
       // Update token if provided
       if (data.new_token) {
-        localStorage.setItem('access_token', data.new_token);
+        localStorage.setItem("access_token", data.new_token);
       }
+
+      handleLogout();
     } catch (err) {
-      console.error('Username update error:', err);
-      const errorMessage = err.response?.data?.detail || 'Failed to update username';
+      console.error("Username update error:", err);
+      const errorMessage =
+        err.response?.data?.detail || "Failed to update username";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -128,38 +141,43 @@ const Profile = () => {
   const handleUsernameCancel = () => {
     setIsEditingUsername(false);
     setNewUsername(user.username);
-    setError('');
+    setError("");
   };
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
-      toast.error('New passwords do not match');
+      setError("New passwords do not match");
+      toast.error("New passwords do not match");
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
-      setError('New password must be at least 6 characters long');
-      toast.error('New password must be at least 6 characters long');
+      setError("New password must be at least 6 characters long");
+      toast.error("New password must be at least 6 characters long");
       return;
     }
 
     setPasswordLoading(true);
-    setError('');
+    setError("");
 
     try {
       await changePassword({
         current_password: passwordData.currentPassword,
-        new_password: passwordData.newPassword
+        new_password: passwordData.newPassword,
       });
 
-      setSuccess('Password updated successfully!');
-      toast.success('Password updated successfully!');
+      setSuccess("Password updated successfully!");
+      toast.success("Password updated successfully!");
       setShowPasswordForm(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (err) {
-      console.error('Password change error:', err);
-      const errorMessage = err.response?.data?.detail || 'Failed to update password';
+      console.error("Password change error:", err);
+      const errorMessage =
+        err.response?.data?.detail || "Failed to update password";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -168,28 +186,28 @@ const Profile = () => {
   };
 
   const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
+    setShowPasswords((prev) => ({
       ...prev,
-      [field]: !prev[field]
+      [field]: !prev[field],
     }));
   };
 
   const handleLogout = async () => {
     try {
       await logoutUser();
-      
+
       // Clear local storage and context
-      localStorage.removeItem('access_token');
+      localStorage.removeItem("access_token");
       logout(); // Call logout from AuthContext
-      toast.success('Logged out successfully!');
-      navigate('/login');
+      toast.success("Logged out successfully!");
+      navigate("/login");
     } catch (err) {
-      console.error('Logout failed:', err);
+      console.error("Logout failed:", err);
       // Even if logout fails, clear local data and redirect
-      localStorage.removeItem('access_token');
+      localStorage.removeItem("access_token");
       logout();
-      toast.success('Logged out successfully!');
-      navigate('/login');
+      toast.success("Logged out successfully!");
+      navigate("/login");
     }
   };
 
@@ -198,7 +216,9 @@ const Profile = () => {
       <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans p-6 overflow-hidden flex items-center justify-center">
         <div className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-purple-700 font-semibold">Loading profile...</p>
+          <p className="mt-4 text-purple-700 font-semibold">
+            Loading profile...
+          </p>
         </div>
       </div>
     );
@@ -212,9 +232,7 @@ const Profile = () => {
           <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
             GenMark
           </h1>
-          <p className="text-font-bold mt-1">
-            👤 Profile Settings
-          </p>
+          <p className="text-font-bold mt-1">👤 Profile Settings</p>
         </div>
         <div>
           <button
@@ -232,7 +250,7 @@ const Profile = () => {
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg max-w-4xl mx-auto">
           {success}
@@ -275,11 +293,13 @@ const Profile = () => {
               </div>
               <h3 className="text-xl font-bold text-purple-700">Username</h3>
             </div>
-            
+
             {!isEditingUsername ? (
               <div className="space-y-4">
                 <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
-                  <span className="text-purple-800 text-lg font-semibold">{user.username}</span>
+                  <span className="text-purple-800 text-lg font-semibold">
+                    {user.username}
+                  </span>
                 </div>
                 <button
                   onClick={handleUsernameEdit}
@@ -335,7 +355,9 @@ const Profile = () => {
             </div>
             <div className="space-y-4">
               <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
-                <span className="text-indigo-800 text-lg font-semibold">{user.email}</span>
+                <span className="text-indigo-800 text-lg font-semibold">
+                  {user.email}
+                </span>
               </div>
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                 📧 Email cannot be changed for security reasons
@@ -375,16 +397,25 @@ const Profile = () => {
                   <input
                     type={showPasswords.current ? "text" : "password"}
                     value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        currentPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                   />
                   <button
                     type="button"
-                    onClick={() => togglePasswordVisibility('current')}
+                    onClick={() => togglePasswordVisibility("current")}
                     className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
                   >
-                    {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPasswords.current ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -398,17 +429,26 @@ const Profile = () => {
                   <input
                     type={showPasswords.new ? "text" : "password"}
                     value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        newPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                     minLength={6}
                   />
                   <button
                     type="button"
-                    onClick={() => togglePasswordVisibility('new')}
+                    onClick={() => togglePasswordVisibility("new")}
                     className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
                   >
-                    {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPasswords.new ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -422,17 +462,26 @@ const Profile = () => {
                   <input
                     type={showPasswords.confirm ? "text" : "password"}
                     value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                     minLength={6}
                   />
                   <button
                     type="button"
-                    onClick={() => togglePasswordVisibility('confirm')}
+                    onClick={() => togglePasswordVisibility("confirm")}
                     className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
                   >
-                    {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPasswords.confirm ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -455,8 +504,12 @@ const Profile = () => {
                   type="button"
                   onClick={() => {
                     setShowPasswordForm(false);
-                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                    setError('');
+                    setPasswordData({
+                      currentPassword: "",
+                      newPassword: "",
+                      confirmPassword: "",
+                    });
+                    setError("");
                   }}
                   disabled={passwordLoading}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-semibold"
