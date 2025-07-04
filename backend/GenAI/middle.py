@@ -24,7 +24,7 @@ GROQ_API = os.getenv("GROQ_API")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # You should configure your API key outside the function (only once)
-client = gai.AsyncClient(api_key=GOOGLE_API_KEY)
+client = gai.Client(api_key=GOOGLE_API_KEY)
 
 class AgentState(TypedDict):
     user_id: str
