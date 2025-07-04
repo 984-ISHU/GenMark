@@ -157,7 +157,11 @@ const Editor = () => {
       await editImageRequest(projectId, instruction, originalImageId);
 
       // Reload image from local `EditImage.jpg`
-      const response = await fetch("/EditImage.jpg", { cache: "no-store" }); // prevent stale image caching
+      const response = await fetch(
+        "https://genmark-mzoy.onrender.com/api/edit/edited/image",
+        { cache: "no-store" }
+      );
+ // prevent stale image caching
       if (!response.ok) throw new Error("Failed to fetch edited image");
 
       const blob = await response.blob();
@@ -494,11 +498,11 @@ const Editor = () => {
                     </div>
                   ) : imageURL ? (
                     <div className="max-w-full max-h-[80vh] overflow-auto">
-                      <img
+                     <img
                         src={imageURL}
                         alt="Generated content"
                         className="rounded-xl w-auto h-auto max-w-full max-h-[80vh] mx-auto"
-                      />
+                      /> 
                     </div>
                   ) : (
                     <div className="text-center">
