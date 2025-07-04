@@ -254,19 +254,6 @@ async def image_agent(state: AgentState) -> dict:
     print("Image IDs:", image_ids)
 
     try:
-        db = get_database()
-        print("Using database:", db.name)
-        collections = await db.list_collection_names()
-        print("Collections in DB:", collections)
-        await db.command("ping")
-        print("Database connection verified")
-        bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
-
-        print("✅ [DEBUG] DB:", db)
-        print("✅ [DEBUG] Bucket:", bucket)
-        print("✅ [DEBUG] Bucket Type:", type(bucket))
-
-
         parts = []
 
         # Add the image prompt as the first Part
@@ -277,35 +264,37 @@ async def image_agent(state: AgentState) -> dict:
             f"{prompt}"
         )))
 
-        # Load images from GridFS
-        for image_id in image_ids:
-            print(f"Loading image: {image_id}")
-            try:
-                obj_id = ObjectId(image_id)
+        # Load images using the API endpoint
+        async with aiohttp.ClientSession() as session:
+            for image_id in image_ids:
+                print(f"Loading image via API: {image_id}")
+                try:
+                    # Call the streaming API endpoint
+                    api_url = f"https://genmark.onrender.com/api/generated_output/image/{image_id}"
+                    
+                    async with session.get(api_url) as response:
+                        if response.status == 200:
+                            image_data = await response.read()
+                            
+                            # Determine content type from response headers
+                            content_type = response.headers.get('content-type', 'image/jpeg')
+                            
+                            parts.append(Part(inline_data={
+                                "mime_type": content_type,
+                                "data": image_data
+                            }))
+                            print(f"✅ Loaded image {image_id} via API")
+                        else:
+                            print(f"❌ Failed to load image {image_id}: HTTP {response.status}")
+                            continue
 
-                # Check existence in files collection
-                file_exists = db["ProductImageBucket.files"].find_one({"_id": obj_id})
-                if not file_exists:
-                    print(f"❌ Image ID {image_id} not found in ProductImageBucket.files")
+                except Exception as e:
+                    print(f"⚠️ Failed to load image {image_id} via API: {e}")
                     continue
 
-                file_obj = bucket.open_download_stream(obj_id)
-                if not file_obj:
-                    print(f"❌ GridFS could not open stream for {image_id}")
-                    continue
-
-                image_data = await file_obj.read()
-                await file_obj.close()
-
-                parts.append(Part(inline_data={
-                    "mime_type": "image/jpeg",
-                    "data": image_data
-                }))
-                print(f"✅ Loaded image {image_id}")
-
-            except Exception as e:
-                print(f"⚠️ Failed to load image {image_id}: {e}")
-
+        if len(parts) == 1:  # Only text prompt, no images loaded
+            print("❌ No images were successfully loaded")
+            return {"image_bytes": None, "project_id": project_id}
 
         # Construct content from parts
         contents = Content(parts=parts)
@@ -318,7 +307,10 @@ async def image_agent(state: AgentState) -> dict:
                 response_modalities=['TEXT', 'IMAGE']
             )
         )
-        print("✅ Gemini Image Generation Response:", response)
+        
+        print("✅ Gemini Image Generation Response received")
+        
+        # Extract the generated image
         for i, part in enumerate(response.candidates[0].content.parts):
             if part.inline_data:
                 image_bytes = BytesIO(part.inline_data.data)
@@ -332,7 +324,6 @@ async def image_agent(state: AgentState) -> dict:
     except Exception as e:
         print(f"❌ Image generation failed: {e}")
         return {"image_bytes": None, "project_id": project_id}
-
 
 
 # ----- IMAGE UPLOAD AGENT -----
