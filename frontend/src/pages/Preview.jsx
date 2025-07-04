@@ -43,6 +43,11 @@ const Preview = () => {
     const timeoutDuration = 30000;
     const startTime = Date.now();
 
+    // Refs to hold current values of outputs
+    const currentTextRef = { current: textOutput };
+    const currentImageRef = { current: imageURL };
+    const currentVideoRef = { current: videoURL };
+
     const poll = async () => {
       try {
         const projectRes = await getSpecificProject(
@@ -55,22 +60,26 @@ const Preview = () => {
         const outputRes = await getGeneratedOutput(generated_outputs_id);
         const { text, image, video } = outputRes.data;
 
-        if (text && !textOutput) {
+        if (text && text !== currentTextRef.current) {
           setTextOutput(text);
-          setTextLoading(false);
           textLoadingRef.current = false;
+          setTextLoading(false);
+          currentTextRef.current = text; // update ref
         }
 
-        if (image && !imageURL) {
-          setImageURL(getGeneratedImageURL(image));
-          setImageLoading(false);
+        const imageUrl = image ? getGeneratedImageURL(image) : "";
+        if (imageUrl && imageUrl !== currentImageRef.current) {
+          setImageURL(imageUrl);
           imageLoadingRef.current = false;
+          setImageLoading(false);
+          currentImageRef.current = imageUrl; // update ref
         }
 
-        if (video && !videoURL) {
+        if (video && video !== currentVideoRef.current) {
           setVideoURL(video);
-          setVideoLoading(false);
           videoLoadingRef.current = false;
+          setVideoLoading(false);
+          currentVideoRef.current = video; // update ref
         }
 
         if (
@@ -93,7 +102,8 @@ const Preview = () => {
     };
 
     poll();
-  }, [state, navigate, textOutput, imageURL]);
+    // ⛔ do NOT include textOutput/imageURL/videoURL in dependency array!
+  }, [state, navigate]);
 
   const handleEditText = () => {
     navigate(`/editor`, {

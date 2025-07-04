@@ -474,18 +474,18 @@ const Editor = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="h-96 flex justify-center items-center">
+                <CardContent className="flex justify-center items-center p-4">
                   {isLoading ? (
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
                       <p className="text-purple-600">Loading image...</p>
                     </div>
                   ) : imageURL ? (
-                    <div className="h-full w-full">
+                    <div className="max-w-full max-h-[80vh] overflow-auto">
                       <img
                         src={imageURL}
                         alt="Generated content"
-                        className="rounded-xl w-full h-full object-cover"
+                        className="rounded-xl w-auto h-auto max-w-full max-h-[80vh] mx-auto"
                       />
                     </div>
                   ) : (
