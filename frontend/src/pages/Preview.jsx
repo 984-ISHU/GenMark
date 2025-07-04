@@ -189,18 +189,18 @@ const Preview = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex justify-center items-center h-80 pt-20">
+            <CardContent className="flex justify-center items-center pt-10">
               {imageLoading ? (
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
                   <p className="text-purple-600">Generating image...</p>
                 </div>
               ) : imageURL ? (
-                <div className="h-96 w-full">
+                <div className="w-auto max-w-full">
                   <img
                     alt="Generated"
                     src={imageURL}
-                    className="rounded-xl w-full h-full object-cover"
+                    className="rounded-xl max-w-full max-h-[600px] object-contain"
                   />
                 </div>
               ) : (
