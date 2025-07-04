@@ -36,17 +36,19 @@ export const uploadDataset = (formData) =>
     },
   });
 
-// ============ PROJECT API ============
-export const getAllProjects = () => API.get("/project/all");
-
-export const getSpecificProject = (user_id, project_id) =>
-  API.get(`/project/${user_id}/${project_id}`);
+// ============ Generated Output API ============
 
 export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
   `http://localhost:8000/api/generated_output/image/${image_id}`;
+
+// ============ PROJECT API ============
+export const getAllProjects = () => API.get("/project/all");
+
+export const getSpecificProject = (user_id, project_id) =>
+  API.get(`/project/${user_id}/${project_id}`);
 
 export const getAllUserProjects = (user_id) =>
   API.get(`/project/all/${user_id}`);
@@ -174,12 +176,16 @@ export const createGeneratedOutputsFormData = (outputsData) => {
 };
 
 // Helper function to create payload for regeneration
-export const createRegenerationPayload = (currentOutput, modifications, additionalContext = {}) => {
+export const createRegenerationPayload = (
+  currentOutput,
+  modifications,
+  additionalContext = {}
+) => {
   return {
     current_output: currentOutput,
     modifications: modifications,
     additional_context: additionalContext,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 

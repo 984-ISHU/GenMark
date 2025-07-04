@@ -238,7 +238,7 @@ async def upload_generated_text(
 @router.put("/upload-generated-video/{project_id}")
 async def upload_generated_video(
     project_id: str,
-    video_output: UploadFile = File(...),
+    video_output: str,
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")

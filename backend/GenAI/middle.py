@@ -1,3 +1,4 @@
+import time
 from bson import ObjectId
 from app.db import get_database
 from google.genai.types import Part, Content, Blob
@@ -91,20 +92,26 @@ def generate_prompt(state: AgentState) -> dict:
     # Enhanced system prompt
     system_prompt = (
         "You are an expert prompt engineer.\n"
-        "Based on the marketing content provided by the user, your job is to generate highly effective generation prompts for a multimodal LLMs.\n"
-        "You must:\n"
-        "- Determine what the user wants based on their output format description.\n"
-        "- Generate prompts for text, image, and video accordingly.\n"
-        "- All prompts should reflect the tone, platform, and audience expectations.\n"
-        "- Do not add your own assumptions — follow the user description strictly.\n"
-        "- Return a JSON response with only relevant fields filled.\n\n"
-        "Only return:\n"
+        "You help users market their products by generating highly effective generation prompts for a multimodal LLM.\n"
+        "Your job is to create prompts that guide the LLM to generate **marketing content** in the form of text, images, and videos.\n\n"
+        "Your responsibilities include:\n"
+        "- Accurately interpret the user's intent and the desired output format, and generate prompts **only** for the formats requested.\n"
+        "- Always generate clear, goal-oriented prompts for **text**, **image**, and **video** when specified.\n"
+        "- For the **image prompt**, always assume that one or more reference images of the product are provided.\n"
+        "- The image prompt must **explicitly reference the input image(s)** and instruct the image generation agent to retain the **exact visual appearance** of the product as shown — including shape, color, texture, and overall look.\n"
+        "- If the user only describes the setting, mood, or environment (and not the product itself), the image prompt must still ensure the product **looks exactly like it does in the input image(s)**. Never modify or reinterpret the product's appearance.\n"
+        "- Do not introduce assumptions — strictly follow the user's instructions for tone, platform, and audience.\n"
+        "- If the output format is **unclear or ambiguous**, default to generating prompts for **image and text** only (no video).\n"
+        "- Return only a clean JSON object, filling relevant fields and setting others to `null`.\n\n"
+        "Output format:\n"
         "{\n"
         "  \"text_prompt\": \"...\" or null,\n"
         "  \"image_prompt\": \"...\" or null,\n"
         "  \"video_prompt\": \"...\" or null\n"
         "}"
     )
+
+
 
     # Build user context message
     user_message = (
@@ -182,14 +189,17 @@ def text_agent(state: AgentState) -> dict:
     # Define system instructions
     system_prompt = (
         "You are a senior marketing copywriter for a global brand.\n"
-        "Your task is to generate short, compelling marketing messages based on a given prompt.\n"
-        "The response must:\n"
-        "- Be persuasive and engaging.\n"
-        "- Reflect modern, brand-aware language.\n"
-        "- Be clear and emotionally resonant for the target audience.\n"
-        "- Not exceed 2 paragraphs.\n"
-        "- Be ready to publish without further editing."
+        "Your job is to generate short, compelling, and emotionally resonant marketing copy for direct use in digital campaigns.\n\n"
+        "You must:\n"
+        "- Write content that is persuasive, modern, and aligned with brand voice.\n"
+        "- Always return **final, ready-to-publish** marketing text — never suggestions, outlines, or sample formats.\n"
+        "- Avoid lists, bullet points, or meta explanations (e.g., 'Here are 3 options...').\n"
+        "- Your output should feel native to social platforms (e.g., Instagram, TikTok), emotionally engaging, and tailored to the target audience.\n"
+        "- Limit your response to **a maximum of 2 concise, energetic paragraphs**.\n"
+        "- Ensure tone consistency and make it instantly shareable without needing editing or review.\n\n"
+        "Only return the marketing text — no headers, quotes, or markdown formatting."
     )
+
 
     try:
         # Generate the text using Gemini
@@ -228,6 +238,7 @@ def text_agent(state: AgentState) -> dict:
     except Exception as e:
         print(f"Text generation failed: {e}")
         return {"text_output": None}
+    
 
 
 async def image_agent(state: AgentState) -> dict:
@@ -244,40 +255,54 @@ async def image_agent(state: AgentState) -> dict:
 
     try:
         db = get_database()
+        print("Using database:", db.name)
+        collections = await db.list_collection_names()
+        print("Collections in DB:", collections)
         await db.command("ping")
         print("Database connection verified")
         bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
 
         parts = []
 
-        # Add the image prompt as a Part
-        parts.append(Part(text=prompt))
+        # Add the image prompt as the first Part
+        parts.append(Part(text=(
+            "You are an expert marketing image generator.\n"
+            "Always preserve the product's exact appearance as seen in the uploaded image(s).\n"
+            "Only generate the background, context, or marketing setting based on the prompt below:\n\n"
+            f"{prompt}"
+        )))
 
+        # Load images from GridFS
         for image_id in image_ids:
+            print(f"Loading image: {image_id}")
             try:
                 obj_id = ObjectId(image_id)
-                cursor = await bucket.find({"_id": obj_id}).to_list(length=1)
 
-                if not cursor:
-                    print(f"⚠️ No file found in GridFS for ID {image_id}, skipping")
+                # Check existence in files collection
+                file_exists = await db["ProductImageBucket.files"].find_one({"_id": obj_id})
+                if not file_exists:
+                    print(f"❌ Image ID {image_id} not found in ProductImageBucket.files")
                     continue
 
                 file_obj = await bucket.open_download_stream(obj_id)
+                if not file_obj:
+                    print(f"❌ GridFS could not open stream for {image_id}")
+                    continue
+
                 image_data = await file_obj.read()
                 await file_obj.close()
 
-                contents.append({
-                    "inline_data": {
-                        "mime_type": "image/jpeg",
-                        "data": image_data
-                    }
-                })
+                parts.append(Part(inline_data={
+                    "mime_type": "image/jpeg",
+                    "data": image_data
+                }))
                 print(f"✅ Loaded image {image_id}")
 
             except Exception as e:
                 print(f"⚠️ Failed to load image {image_id}: {e}")
 
 
+        # Construct content from parts
         contents = Content(parts=parts)
 
         print("Generating Image with prompt and image(s)...")
@@ -302,7 +327,6 @@ async def image_agent(state: AgentState) -> dict:
     except Exception as e:
         print(f"❌ Image generation failed: {e}")
         return {"image_bytes": None, "project_id": project_id}
-    
 
 
 
@@ -348,17 +372,102 @@ async def image_upload_agent(state: dict) -> dict:
 
 def video_agent(state: AgentState) -> dict:
     """
-    Helps to generate video based on the prompt provided by the prompt generator
+    Generates a video via Predis and uploads the video URL to the backend after polling until it's ready.
     """
     print("Inside Video Generator")
-    
+
     if not state.get("video_prompt"):
         print("No video prompt found, skipping video generation")
         return {"video_output": None}
-    
-    # For now, return None since video generation isn't implemented
-    print("Video generation not implemented yet")
-    return {"video_output": None}
+
+    try:
+        brand_id = os.getenv("PREDIS_BRAND_ID")
+        api_key = os.getenv("PREDIS_API_KEY")
+        prompt = state["video_prompt"]
+        project_id = state.get("project_id")
+
+        # Step 1: Trigger video generation
+        create_url = "https://brain.predis.ai/predis_api/v1/create_content/"
+        create_payload = {
+            "brand_id": brand_id,
+            "text": prompt,
+            "media_type": "video"
+        }
+        headers = {"Authorization": api_key}
+
+        print("Requesting video generation...")
+        response = requests.post(create_url, data=create_payload, headers=headers, timeout=30)
+        if response.status_code != 200:
+            print(f"❌ Video creation failed: {response.status_code}, {response.text}")
+            return {"video_output": None}
+
+        # Extract post_id to track the video status
+        res_data = response.json()
+        post_id = res_data.get("post_ids", [None])[0]
+        if not post_id:
+            print("❌ Could not retrieve post ID for video")
+            return {"video_output": None}
+
+        print(f"🔁 Waiting for video to be processed (Post ID: {post_id})...")
+
+        # Step 2: Poll the get_posts endpoint until the video is ready
+        video_url = None
+        max_attempts = 10
+        wait_interval = 3  # seconds
+        for attempt in range(max_attempts):
+            time.sleep(wait_interval)
+            get_url = "https://brain.predis.ai/predis_api/v1/get_posts/"
+            get_payload = {
+                "brand_id": brand_id,
+                "media_type": "video",
+                "page_n": 1,
+                "items_n": 5
+            }
+            get_headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+
+            res = requests.get(get_url, params=get_payload, headers=get_headers, timeout=20)
+            if res.status_code != 200:
+                print(f"❌ Failed to fetch posts: {res.status_code}")
+                break
+
+            posts = res.json().get("posts", [])
+            # Look for the post with matching post_id and status == completed
+            for post in posts:
+                if post["post_id"] == post_id and post["status"] == "completed":
+                    media = post.get("generated_media", [])
+                    if media and media[0].get("url"):
+                        video_url = media[0]["url"]
+                        print(f"✅ Video is ready: {video_url}")
+                        break
+
+            if video_url:
+                break
+            else:
+                print(f"⏳ Attempt {attempt+1}/{max_attempts}: Video not ready yet...")
+
+        if not video_url:
+            print("❌ Video generation timed out after polling")
+            return {"video_output": None}
+
+        # Step 3: Upload the video URL to backend
+        backend_url = f"http://127.0.0.1:8000/api/project/upload-generated-video/{project_id}"
+        upload_payload = {"video_output": video_url, "project_id": project_id}
+
+        upload_res = requests.put(backend_url, data=upload_payload, timeout=10)
+        if upload_res.status_code == 200:
+            print("✅ Video URL uploaded to server")
+        else:
+            print(f"❌ Upload failed: {upload_res.status_code}, {upload_res.text}")
+
+        return {"video_output": video_url}
+
+    except Exception as e:
+        print(f"❌ Video generation failed: {e}")
+        return {"video_output": None}
+
 
 
 def router_op(state: AgentState) -> dict:

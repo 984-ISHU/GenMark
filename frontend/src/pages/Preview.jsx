@@ -1,7 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit3, FileText, Image, ArrowDownToLine, Copy} from "lucide-react";
+import {
+  ArrowLeft,
+  Edit3,
+  FileText,
+  Image,
+  ArrowDownToLine,
+  Copy,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
   getSpecificProject,
@@ -78,9 +85,9 @@ const PreviewPage = () => {
     navigate(`/editor`, {
       state: {
         ...state,
-        activeTab: 'text',
-        currentText: textOutput
-      }
+        activeTab: "text",
+        currentText: textOutput,
+      },
     });
   };
 
@@ -88,9 +95,9 @@ const PreviewPage = () => {
     navigate(`/editor`, {
       state: {
         ...state,
-        activeTab: 'image',
-        currentImageURL: imageURL
-      }
+        activeTab: "image",
+        currentImageURL: imageURL,
+      },
     });
   };
 
@@ -156,9 +163,9 @@ const PreviewPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const link = document.createElement('a');
+                  const link = document.createElement("a");
                   link.href = imageURL;
-                  link.download = 'generated-image.png';
+                  link.download = "generated-image.png";
                   link.click();
                 }}
                 className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
@@ -177,12 +184,12 @@ const PreviewPage = () => {
               </div>
             ) : imageURL ? (
               <div className="h-96 w-full">
-                <img 
-                  alt="Generated" 
-                  src="http://localhost:8000/api/generated_output/image/6866547dc175d29d7e64b030" 
-                  className="rounded-xl w-full h-full object-cover" 
+                <img
+                  alt="Generated"
+                  src={imageURL}
+                  className="rounded-xl w-full h-full object-cover"
                 />
-            </div>
+              </div>
             ) : (
               <div className="text-center">
                 <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
