@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 const Home = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const handleGetStarted = () => {
-    // Navigate to login page - replace with your actual navigation logic
-    window.location.href = "/login?redirect=/dashboard";
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/login");
+    }
   };
-
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
