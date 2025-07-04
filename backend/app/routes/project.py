@@ -39,6 +39,16 @@ async def fetch_product_image_ids(product_id: str, db: AsyncIOMotorDatabase) -> 
     
     return product.get("images", [])
 
+def clean_mongo_doc(doc):
+    cleaned = {}
+    for key, value in doc.items():
+        if isinstance(value, ObjectId):
+            cleaned[key] = str(value)
+        elif isinstance(value, datetime):
+            cleaned[key] = value.isoformat()
+        else:
+            cleaned[key] = value
+    return cleaned
 
 
 # ----------- Routes ----------- #
@@ -141,16 +151,10 @@ async def create_project_and_product(
 
     return {"message": "Project and Product created", "project_id": str(project_result.inserted_id)}
 
-def clean_mongo_doc(doc):
-    cleaned = {}
-    for key, value in doc.items():
-        if isinstance(value, ObjectId):
-            cleaned[key] = str(value)
-        elif isinstance(value, datetime):
-            cleaned[key] = value.isoformat()
-        else:
-            cleaned[key] = value
-    return cleaned
+
+
+
+
 
 @router.get("/all")
 async def get_all_projects(db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -159,12 +163,22 @@ async def get_all_projects(db: AsyncIOMotorDatabase = Depends(get_database)):
         projects.append(clean_mongo_doc(p))
     return projects
 
+
+
+
+
+
 @router.get("/all/{user_id}")
 async def get_all_user_projects(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     projects = []
     async for p in db["Projects"].find({"user_id":ObjectId(user_id)}):
         projects.append(clean_mongo_doc(p))
     return projects
+
+
+
+
+
 
 @router.get("/{user_id}/{project_id}")
 async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -179,6 +193,8 @@ async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDa
         raise HTTPException(status_code=404, detail="Project not Found")
 
     return convert_object_ids(project)
+
+
 
 @router.put("/update/generated-output/{project_id}")
 async def upload_generated_text(
@@ -233,20 +249,15 @@ async def upload_generated_text(
 
 
 
-
-# Upload of Generated Video
+# Upload of Generated Video (via URL)
 @router.put("/upload-generated-video/{project_id}")
 async def upload_generated_video(
     project_id: str,
-    video_output: str,
+    video_output: str = Form(...),  # Accept video URL as form field
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="GeneratedOutputsBucket")
-    content = await video_output.read()
-    video_id = await bucket.upload_from_stream(video_output.filename, content)
-
-    await upsert_generated_output(db, project_id, {"video": str(video_id)})
-    return {"message": "Video uploaded", "video_id": str(video_id)}
+    await upsert_generated_output(db, project_id, {"video": video_output})
+    return {"message": "Video URL uploaded", "video_url": video_output}
 
 
 # Stream Product Image
