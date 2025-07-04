@@ -17,6 +17,19 @@ import {
   getGeneratedImageURL,
 } from "@/lib/api";
 
+// Simple loading bar component
+const LoadingBar = ({ color = "indigo", label }) => (
+  <div className="flex flex-col items-center justify-center w-full">
+    <div className={`w-48 h-3 bg-gray-200 rounded-full overflow-hidden`}>
+      <div
+        className={`h-3 rounded-full animate-pulse bg-${color}-600`}
+        style={{ width: "70%" }}
+      ></div>
+    </div>
+    <p className={`mt-2 text-${color}-600 font-semibold`}>{label}</p>
+  </div>
+);
+
 const Preview = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,18 +39,26 @@ const Preview = () => {
   const [imageURL, setImageURL] = useState("");
   const [videoURL, setVideoURL] = useState("");
   const [textLoading, setTextLoading] = useState(true);
-  const [videoLoading, setVideoLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
 
   const textLoadingRef = useRef(true);
   const imageLoadingRef = useRef(true);
   const videoLoadingRef = useRef(true);
 
+  // Poll for updates on mount or when returning from Editor
   useEffect(() => {
     if (!state) {
       navigate("/dashboard");
       return;
     }
+
+    setTextLoading(true);
+    setImageLoading(true);
+    setVideoLoading(true);
+    textLoadingRef.current = true;
+    imageLoadingRef.current = true;
+    videoLoadingRef.current = true;
 
     const pollInterval = 2000;
     const timeoutDuration = 30000;
@@ -64,7 +85,9 @@ const Preview = () => {
           setTextOutput(text);
           textLoadingRef.current = false;
           setTextLoading(false);
-          currentTextRef.current = text; // update ref
+          currentTextRef.current = text;
+        } else if (!text) {
+          setTextOutput("");
         }
 
         const imageUrl = image ? getGeneratedImageURL(image) : "";
@@ -72,14 +95,18 @@ const Preview = () => {
           setImageURL(imageUrl);
           imageLoadingRef.current = false;
           setImageLoading(false);
-          currentImageRef.current = imageUrl; // update ref
+          currentImageRef.current = imageUrl;
+        } else if (!image) {
+          setImageURL("");
         }
 
         if (video && video !== currentVideoRef.current) {
           setVideoURL(video);
           videoLoadingRef.current = false;
           setVideoLoading(false);
-          currentVideoRef.current = video; // update ref
+          currentVideoRef.current = video;
+        } else if (!video) {
+          setVideoURL("");
         }
 
         if (
@@ -89,6 +116,10 @@ const Preview = () => {
           Date.now() - startTime < timeoutDuration
         ) {
           setTimeout(poll, pollInterval);
+        } else {
+          setTextLoading(false);
+          setImageLoading(false);
+          setVideoLoading(false);
         }
       } catch (err) {
         console.error("Polling error:", err);
@@ -102,7 +133,10 @@ const Preview = () => {
     };
 
     poll();
-    // ⛔ do NOT include textOutput/imageURL/videoURL in dependency array!
+
+    // Optionally: cleanup on unmount
+    // return () => { ... }
+    // eslint-disable-next-line
   }, [state, navigate]);
 
   const handleEditText = () => {
@@ -214,10 +248,7 @@ const Preview = () => {
             </CardHeader>
             <CardContent className="flex justify-center items-center pt-10">
               {imageLoading ? (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-purple-600">Generating image...</p>
-                </div>
+                <LoadingBar color="purple" label="Generating image..." />
               ) : imageURL ? (
                 <div className="w-auto max-w-full">
                   <img
@@ -226,14 +257,7 @@ const Preview = () => {
                     className="rounded-xl max-w-full max-h-[600px] object-contain"
                   />
                 </div>
-              ) : (
-                <div className="text-center">
-                  <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500 italic">
-                    Image not generated yet.
-                  </p>
-                </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
@@ -262,6 +286,7 @@ const Preview = () => {
                     navigator.clipboard.writeText(textOutput);
                   }}
                   className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                  disabled={!textOutput}
                 >
                   <Copy className="w-4 h-4" />
                   Copy Text
@@ -270,25 +295,18 @@ const Preview = () => {
             </CardHeader>
             <CardContent className="h-80 overflow-y-auto">
               {textLoading ? (
-                <div className="text-center pt-20">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                  <p className="text-indigo-600">Generating text...</p>
-                </div>
+                <LoadingBar color="indigo" label="Generating text..." />
               ) : textOutput ? (
                 <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
                   {textOutput}
                 </div>
-              ) : (
-                <div className="text-center pt-20">
-                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500 italic">
-                    Text not generated yet.
-                  </p>
-                </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
+        </div>
 
+        {/* Video Output */}
+        <div className="mt-10 px-10">
           <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl col-span-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
@@ -313,18 +331,15 @@ const Preview = () => {
               </div>
             </CardHeader>
             <CardContent className="flex justify-center items-center pt-6">
-              {videoURL ? (
+              {videoLoading ? (
+                <LoadingBar color="green" label="Generating video..." />
+              ) : videoURL ? (
                 <video
                   controls
                   src={videoURL}
                   className="rounded-xl max-w-full max-h-[600px]"
                 />
-              ) : (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                  <p className="text-green-600">Generating video...</p>
-                </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </div>
@@ -338,6 +353,12 @@ const Preview = () => {
         >
           <Edit3 className="w-5 h-5" />
           Open Editor
+        </Button>
+        <Button
+          onClick={() => window.location.reload()}
+          className="bg-gray-200 text-gray-800 font-semibold py-3 px-8 rounded-3xl shadow-md hover:bg-gray-300 transition-all duration-200 flex items-center gap-2"
+        >
+          Refresh
         </Button>
       </div>
     </div>
