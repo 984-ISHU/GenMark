@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://genmark-5qpu.onrender.com/api",
+  baseURL: "http://127.0.0.1:8000/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
@@ -42,7 +42,7 @@ export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `https://genmark-5qpu.onrender.com/api/generated_output/image/${image_id}`;
+  `http://127.0.0.1:8000/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
@@ -188,6 +188,7 @@ export const createProjectFormData = (projectData) => {
   formData.append("user_id", projectData.userId);
   formData.append("name", projectData.name);
   formData.append("target_audience", projectData.targetAudience);
+  formData.append("selected_dataset", projectData.selectedDataset);
   formData.append("output_format", projectData.outputFormat);
   formData.append("product_name", projectData.productName);
   formData.append("description", projectData.description);

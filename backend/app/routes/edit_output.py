@@ -1,10 +1,8 @@
 
-import httpx  # ✅ Add this at the top
-from io import BytesIO
-from fastapi import UploadFile
+import httpx 
 from fastapi.responses import FileResponse,JSONResponse
 from fastapi import APIRouter, HTTPException, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 from pydantic import BaseModel
 from pathlib import Path
@@ -15,8 +13,6 @@ from dotenv import load_dotenv
 import os
 from io import BytesIO
 from PIL import Image
-import aiofiles
-import base64 
 from app.db import get_database
 
 load_dotenv()

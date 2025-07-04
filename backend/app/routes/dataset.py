@@ -40,7 +40,6 @@ async def get_datasets():
         datasets.append(dataset_helper(dataset))
     return datasets
 
-from pprint import pprint
 @router.get("/{user_id}", response_model = List[DatasetOut])
 async def get_user_datasets(user_id: str):
     datasets = []
@@ -84,6 +83,17 @@ async def upload_dataset(
     file: UploadFile = File(...)
 ):
     user_obj_id = to_object_id(user_id, "user_id")
+
+    # 🔍 Check for existing dataset with same name for the same user
+    existing = await dataset_collection.find_one({
+        "user_id": user_obj_id,
+        "dataset_name": dataset_name
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A dataset with this name already exists for this user."
+        )
 
     content = await file.read()
     df = pd.read_csv(io.StringIO(content.decode('utf-8')))

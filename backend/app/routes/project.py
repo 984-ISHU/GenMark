@@ -58,6 +58,7 @@ async def create_project_and_product(
     user_id: str = Form(...),
     name: str = Form(...),
     target_audience: str = Form(...),
+    selected_dataset: str = Form(...),
     output_format: str = Form(...),
     product_name: str = Form(...),
     description: str = Form(...),
@@ -97,6 +98,7 @@ async def create_project_and_product(
         "user_id": ObjectId(user_id),
         "name": name,
         "target_audience": target_audience,
+        "selected_dataset": selected_dataset,
         "output_format": output_format,
         "product_id": ObjectId(product_result.inserted_id),
         "generated_outputs_id": None,
@@ -318,14 +320,6 @@ async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get
                         print("Deleted image from GridFS.")
                     except Exception as e:
                         print(f"Error deleting image: {e}")
-
-                # Delete video if present
-                if "video" in generated_output and generated_output["video"]:
-                    try:
-                        await bucket.delete(ObjectId(generated_output["video"]))
-                        print("Deleted video from GridFS.")
-                    except Exception as e:
-                        print(f"Error deleting video: {e}")
 
                 # Delete the document itself
                 result = await db["GeneratedOutput"].delete_one({"_id": output_oid})

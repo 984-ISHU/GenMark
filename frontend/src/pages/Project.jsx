@@ -223,6 +223,7 @@ const Project = () => {
         userId: user.id,
         name: project_name,
         targetAudience,
+        selectedDataset: selectedDataset,
         outputFormat: customOutputDescription,
         productName,
         description,

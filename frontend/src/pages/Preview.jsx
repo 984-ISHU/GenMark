@@ -176,68 +176,113 @@ const Preview = () => {
         <h3 className="text-2xl font-semibold text-gray-800 mb-6 px-10">
           Edit Content
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-10">
-          {/* Image Output */}
-          <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
-                <Image className="w-5 h-5" />
-                Image Output
-              </CardTitle>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditImage}
-                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                  disabled={imageLoading || !imageURL}
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = imageURL;
-                    link.download = "generated-image.png";
-                    link.click();
-                  }}
-                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                  disabled={!imageURL}
-                >
-                  <ArrowDownToLine className="w-4 h-4" />
-                  Download
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex justify-center items-center pt-10">
-              {imageLoading ? (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-purple-600">Generating image...</p>
-                </div>
-              ) : imageURL ? (
-                <div className="w-auto max-w-full">
-                  <img
-                    alt="Generated"
-                    src={imageURL}
-                    className="rounded-xl max-w-full max-h-[600px] object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="text-center">
-                  <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500 italic">
-                    Image not generated yet.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Text Output */}
+        {/* OUTPUTS SECTION */}
+        <div className="px-10">
+          {/* Video + Image Output */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
+            {/* Video Output */}
+            <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
+                  🎥 Video Output
+                </CardTitle>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = videoURL;
+                      link.download = "generated-video.mp4";
+                      link.click();
+                    }}
+                    className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                    disabled={!videoURL}
+                  >
+                    <ArrowDownToLine className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="flex justify-center items-center pt-6">
+                {videoURL ? (
+                  <video
+                    controls
+                    src={videoURL}
+                    className="rounded-xl max-w-full max-h-[600px]"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                    <p className="text-green-600">Generating video...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Image Output */}
+            <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                  <Image className="w-5 h-5" />
+                  Image Output
+                </CardTitle>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditImage}
+                    className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                    disabled={imageLoading || !imageURL}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = imageURL;
+                      link.download = "generated-image.png";
+                      link.click();
+                    }}
+                    className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                    disabled={!imageURL}
+                  >
+                    <ArrowDownToLine className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="flex justify-center items-center pt-10">
+                {imageLoading ? (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p className="text-purple-600">Generating image...</p>
+                  </div>
+                ) : imageURL ? (
+                  <div className="w-auto max-w-full">
+                    <img
+                      alt="Generated"
+                      src={imageURL}
+                      className="rounded-xl max-w-full max-h-[600px] object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500 italic">
+                      Image not generated yet.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Text Output (Aligned) */}
           <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
@@ -288,45 +333,6 @@ const Preview = () => {
               )}
             </CardContent>
           </Card>
-
-          <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl col-span-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
-                🎥 Video Output
-              </CardTitle>
-              <div className="grid grid-cols-1 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = videoURL;
-                    link.download = "generated-video.mp4";
-                    link.click();
-                  }}
-                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                  disabled={!videoURL}
-                >
-                  <ArrowDownToLine className="w-4 h-4" />
-                  Download
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex justify-center items-center pt-6">
-              {videoURL ? (
-                <video
-                  controls
-                  src={videoURL}
-                  className="rounded-xl max-w-full max-h-[600px]"
-                />
-              ) : (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                  <p className="text-green-600">Generating video...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
 
@@ -343,5 +349,4 @@ const Preview = () => {
     </div>
   );
 };
-
 export default Preview;
