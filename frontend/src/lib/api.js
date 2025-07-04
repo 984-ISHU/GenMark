@@ -42,7 +42,7 @@ export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `http://localhost:8000/api/generated_output/image/${image_id}`;
+  `https://genmark.onrender.com/api/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
