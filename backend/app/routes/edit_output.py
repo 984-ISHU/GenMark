@@ -135,7 +135,7 @@ async def edit_image_output(
                 image_bytes = f.read()
         else:
             print("🌐 Fetching image via internal HTTP from /api/image/{id}")
-            image_url = f"http://localhost:8000/api/generated_output/image/{request.original_image_id}"
+            image_url = f"https://genmark-5qpu.onrender.com/api/generated_output/image/{request.original_image_id}"
 
             async with httpx.AsyncClient() as http_client:
                 response = await http_client.get(image_url)
