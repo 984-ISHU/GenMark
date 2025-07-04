@@ -24,11 +24,14 @@ const Preview = () => {
 
   const [textOutput, setTextOutput] = useState("");
   const [imageURL, setImageURL] = useState("");
+  const [videoURL, setVideoURL] = useState("");
   const [textLoading, setTextLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState(true);
 
   const textLoadingRef = useRef(true);
   const imageLoadingRef = useRef(true);
+  const videoLoadingRef = useRef(true);
 
   useEffect(() => {
     if (!state) {
@@ -50,7 +53,7 @@ const Preview = () => {
         if (!generated_outputs_id) return;
 
         const outputRes = await getGeneratedOutput(generated_outputs_id);
-        const { text, image } = outputRes.data;
+        const { text, image, video } = outputRes.data;
 
         if (text && !textOutput) {
           setTextOutput(text);
@@ -64,8 +67,16 @@ const Preview = () => {
           imageLoadingRef.current = false;
         }
 
+        if (video && !videoURL) {
+          setVideoURL(video);
+          setVideoLoading(false);
+          videoLoadingRef.current = false;
+        }
+
         if (
-          (textLoadingRef.current || imageLoadingRef.current) &&
+          (textLoadingRef.current ||
+            imageLoadingRef.current ||
+            videoLoadingRef.current) &&
           Date.now() - startTime < timeoutDuration
         ) {
           setTimeout(poll, pollInterval);
@@ -74,8 +85,10 @@ const Preview = () => {
         console.error("Polling error:", err);
         setTextLoading(false);
         setImageLoading(false);
+        setVideoLoading(false);
         textLoadingRef.current = false;
         imageLoadingRef.current = false;
+        videoLoadingRef.current = false;
       }
     };
 
@@ -261,6 +274,45 @@ const Preview = () => {
                   <p className="text-gray-500 italic">
                     Text not generated yet.
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl col-span-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
+                🎥 Video Output
+              </CardTitle>
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = videoURL;
+                    link.download = "generated-video.mp4";
+                    link.click();
+                  }}
+                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                  disabled={!videoURL}
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  Download
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center pt-6">
+              {videoURL ? (
+                <video
+                  controls
+                  src={videoURL}
+                  className="rounded-xl max-w-full max-h-[600px]"
+                />
+              ) : (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                  <p className="text-green-600">Generating video...</p>
                 </div>
               )}
             </CardContent>

@@ -383,6 +383,8 @@ def video_agent(state: AgentState) -> dict:
     try:
         brand_id = os.getenv("PREDIS_BRAND_ID")
         api_key = os.getenv("PREDIS_API_KEY")
+        print("Brand ID:", brand_id)
+        print("API Key:", api_key)
         prompt = state["video_prompt"]
         project_id = state.get("project_id")
 
@@ -412,8 +414,8 @@ def video_agent(state: AgentState) -> dict:
 
         # Step 2: Poll the get_posts endpoint until the video is ready
         video_url = None
-        max_attempts = 10
-        wait_interval = 3  # seconds
+        max_attempts = 15
+        wait_interval = 10  # seconds
         for attempt in range(max_attempts):
             time.sleep(wait_interval)
             get_url = "https://brain.predis.ai/predis_api/v1/get_posts/"
@@ -454,7 +456,7 @@ def video_agent(state: AgentState) -> dict:
 
         # Step 3: Upload the video URL to backend
         backend_url = f"http://127.0.0.1:8000/api/project/upload-generated-video/{project_id}"
-        upload_payload = {"video_output": video_url, "project_id": project_id}
+        upload_payload = {"video_output": video_url}
 
         upload_res = requests.put(backend_url, data=upload_payload, timeout=10)
         if upload_res.status_code == 200:
