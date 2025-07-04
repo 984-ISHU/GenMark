@@ -136,7 +136,7 @@ const Automation = () => {
         .replace("{textOutput}", textOutput);
       
       console.log(html)
-      const response = await fetch('http://localhost:8000/api/send-email', {
+      const response = await fetch('https://genmark-5qpu.onrender.com/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
