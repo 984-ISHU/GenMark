@@ -1,14 +1,9 @@
 from fastapi import FastAPI
 from app.routes import project, dataset, user, generatedoutput, send_email, edit_output
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-VITE_APP_URL = os.getenv('VITE_APP_UL')
 
 app = FastAPI(
-    title="Your Project API",
+    title="https://gen-mark.vercel.app",
     description="Backend API for managing projects, datasets, products, and users",
     version="1.0.0"
 )
