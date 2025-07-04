@@ -217,7 +217,7 @@ def text_agent(state: AgentState) -> dict:
         print("Generated Text:\n", generated_text)
 
         # Upload to FastAPI endpoint
-        api_url = f"http://127.0.0.1:8000/api/project/upload-generated-text/{project_id}"
+        api_url = f"https://genmark.onrender.com/api/project/upload-generated-text/{project_id}"
 
         try:
             res = requests.put(
@@ -254,14 +254,6 @@ async def image_agent(state: AgentState) -> dict:
     print("Image IDs:", image_ids)
 
     try:
-        db = get_database()
-        print("Using database:", db.name)
-        collections = await db.list_collection_names()
-        print("Collections in DB:", collections)
-        await db.command("ping")
-        print("Database connection verified")
-        bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
-
         parts = []
 
         # Add the image prompt as the first Part
@@ -272,48 +264,53 @@ async def image_agent(state: AgentState) -> dict:
             f"{prompt}"
         )))
 
-        # Load images from GridFS
-        for image_id in image_ids:
-            print(f"Loading image: {image_id}")
-            try:
-                obj_id = ObjectId(image_id)
+        # Load images using the correct project API endpoint
+        async with aiohttp.ClientSession() as session:
+            for image_id in image_ids:
+                print(f"Loading image via project API: {image_id}")
+                try:
+                    # Call the correct streaming API endpoint from project.py
+                    api_url = f"https://genmark.onrender.com/api/project/uploaded/image/{image_id}"
+                    
+                    async with session.get(api_url) as response:
+                        if response.status == 200:
+                            image_data = await response.read()
+                            
+                            # Determine content type from response headers
+                            content_type = response.headers.get('content-type', 'image/jpeg')
+                            
+                            parts.append(Part(inline_data={
+                                "mime_type": content_type,
+                                "data": image_data
+                            }))
+                            print(f"✅ Loaded image {image_id} via project API")
+                        else:
+                            print(f"❌ Failed to load image {image_id}: HTTP {response.status}")
+                            continue
 
-                # Check existence in files collection
-                file_exists = await db["ProductImageBucket.files"].find_one({"_id": obj_id})
-                if not file_exists:
-                    print(f"❌ Image ID {image_id} not found in ProductImageBucket.files")
+                except Exception as e:
+                    print(f"⚠️ Failed to load image {image_id} via project API: {e}")
                     continue
 
-                file_obj = await bucket.open_download_stream(obj_id)
-                if not file_obj:
-                    print(f"❌ GridFS could not open stream for {image_id}")
-                    continue
-
-                image_data = await file_obj.read()
-                await file_obj.close()
-
-                parts.append(Part(inline_data={
-                    "mime_type": "image/jpeg",
-                    "data": image_data
-                }))
-                print(f"✅ Loaded image {image_id}")
-
-            except Exception as e:
-                print(f"⚠️ Failed to load image {image_id}: {e}")
-
+        if len(parts) == 1:  # Only text prompt, no images loaded
+            print("❌ No images were successfully loaded")
+            return {"image_bytes": None, "project_id": project_id}
 
         # Construct content from parts
         contents = Content(parts=parts)
 
         print("Generating Image with prompt and image(s)...")
-        response = client.models.generate_content(
+        response = await client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=['TEXT', 'IMAGE']
             )
         )
-
+        
+        print("✅ Gemini Image Generation Response received")
+        
+        # Extract the generated image
         for i, part in enumerate(response.candidates[0].content.parts):
             if part.inline_data:
                 image_bytes = BytesIO(part.inline_data.data)
@@ -327,7 +324,6 @@ async def image_agent(state: AgentState) -> dict:
     except Exception as e:
         print(f"❌ Image generation failed: {e}")
         return {"image_bytes": None, "project_id": project_id}
-
 
 
 # ----- IMAGE UPLOAD AGENT -----
@@ -345,7 +341,7 @@ async def image_upload_agent(state: dict) -> dict:
         return {"image_output": None}
 
     try:
-        api_url = f"http://127.0.0.1:8000/api/project/upload-generated-image/{project_id}"
+        api_url = f"https://genmark.onrender.com/api/project/upload-generated-image/{project_id}"
         print(f"Uploading to: {api_url}")
 
         async with aiohttp.ClientSession() as session:
@@ -455,7 +451,7 @@ def video_agent(state: AgentState) -> dict:
             return {"video_output": None}
 
         # Step 3: Upload the video URL to backend
-        backend_url = f"http://127.0.0.1:8000/api/project/upload-generated-video/{project_id}"
+        backend_url = f"https://genmark.onrender.com/api/project/upload-generated-video/{project_id}"
         upload_payload = {"video_output": video_url}
 
         upload_res = requests.put(backend_url, data=upload_payload, timeout=10)
@@ -480,7 +476,7 @@ def router_op(state: AgentState) -> dict:
     project_id = state.get("project_id")
 
     try:
-        api_url = f"http://127.0.0.1:8000/api/project/update/generated-output/{project_id}"
+        api_url = f"https://genmark.onrender.com/api/project/update/generated-output/{project_id}"
         res = requests.put(
             api_url, 
             data={"project_id": project_id},
