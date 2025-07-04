@@ -72,6 +72,15 @@ const Editor = () => {
     loadProjectData();
   }, [state, navigate]);
 
+  useEffect(() => {
+    return () => {
+      // Cleanup image URLs on unmount
+      if (imageURL && imageURL.startsWith('blob:')) {
+        URL.revokeObjectURL(imageURL);
+      }
+    };
+  }, [imageURL]);
+
   const loadProjectData = async () => {
     let imageWasLoadedLocally = false;
 

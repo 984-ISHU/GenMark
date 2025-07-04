@@ -46,33 +46,42 @@ const Dashboard = () => {
   const [datasetFile, setDatasetFile] = useState(null);
   const [uploadingDataset, setUploadingDataset] = useState(false);
 
-  // Initialize user data from context or fetch from API
-  useEffect(() => {
-    if (contextUser) {
-      const userData = {
-          id: contextUser._id || contextUser.id || contextUser.user?._id || contextUser.user?.id,
-          username: contextUser.username || contextUser.user?.username || "",
-          email: contextUser.email || contextUser.user?.email || "",
-        };
-
-      setUser(userData);
-      setLoading(false);
-    } else {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
+  // Update the useEffect dependency array to include the necessary dependencies
+    useEffect(() => {
+        if (contextUser) {
+          const userData = {
+            id: contextUser._id || contextUser.id || contextUser.user?._id || contextUser.user?.id,
+            username: contextUser.username || contextUser.user?.username || "",
+            email: contextUser.email || contextUser.user?.email || "",
+          };
+          setUser(userData);
           setLoading(false);
-        } catch (error) {
-          console.error("Error parsing stored user data:", error);
-          fetchUserProfile();
+        } else {
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              setUser(parsedUser);
+              setLoading(false);
+            } catch (error) {
+              console.error("Error parsing stored user data:", error);
+              fetchUserProfile();
+            }
+          } else {
+            fetchUserProfile();
+          }
         }
-      } else {
-        fetchUserProfile();
-      }
-    }
-  }, [contextUser]);
+      }, [contextUser]);
+
+    // Add immediate data fetching after user is set
+    useEffect(() => {
+      const fetchData = async () => {
+        if (user?.id) {
+          await Promise.all([fetchProjects(), fetchDatasets()]);
+        }
+      };
+      fetchData();
+    }, [user]);
 
   // Fetch user profile from API
   const fetchUserProfile = async () => {
@@ -89,14 +98,6 @@ const Dashboard = () => {
     }
   };
 
-  // Fetch projects and datasets when user is loaded
-    useEffect(() => {
-      console.log("User state before fetching:", user);
-      if (user?.id) {
-        fetchProjects();
-        fetchDatasets();
-      }
-    }, [user]);
 
   // Fetch user's projects
   const fetchProjects = async () => {

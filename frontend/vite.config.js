@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://genmark-5qpu.onrender.com",
+        target: "https://genmark-mzoy.onrender.com",
         changeOrigin: true,
         secure: false,
       },
