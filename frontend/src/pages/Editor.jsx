@@ -67,6 +67,7 @@ const Editor = () => {
     }
     if (state.currentImageURL) {
       setImageURL(state.currentImageURL);
+      console.log(imageURL)
     }
 
     loadProjectData();
@@ -90,6 +91,7 @@ const Editor = () => {
         const blob = await getEditedImage();
         const url = URL.createObjectURL(blob);
         setImageURL(url);
+        console.log("2nd", url);
         imageWasLoadedLocally = true;
         console.log("Loaded locally edited image");
       } catch (err) {
@@ -114,6 +116,7 @@ const Editor = () => {
 
         if (image && !imageWasLoadedLocally) {
           setOriginalImageId(image);
+          console.log("3rd:", getGeneratedImageURL(image))
           setImageURL(getGeneratedImageURL(image));
         }
       }
