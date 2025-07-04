@@ -120,7 +120,6 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
         max_age=10080
     )
 
-
     return {
         "access_token": access_token,
         "user": {
