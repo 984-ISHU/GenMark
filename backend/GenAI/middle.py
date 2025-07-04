@@ -24,7 +24,7 @@ GROQ_API = os.getenv("GROQ_API")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # You should configure your API key outside the function (only once)
-client = gai.Client(api_key=GOOGLE_API_KEY)
+client = gai.AsyncClient(api_key=GOOGLE_API_KEY)
 
 class AgentState(TypedDict):
     user_id: str
@@ -284,12 +284,12 @@ async def image_agent(state: AgentState) -> dict:
                 obj_id = ObjectId(image_id)
 
                 # Check existence in files collection
-                file_exists = await db["ProductImageBucket.files"].find_one({"_id": obj_id})
+                file_exists = db["ProductImageBucket.files"].find_one({"_id": obj_id})
                 if not file_exists:
                     print(f"❌ Image ID {image_id} not found in ProductImageBucket.files")
                     continue
 
-                file_obj = await bucket.open_download_stream(obj_id)
+                file_obj = bucket.open_download_stream(obj_id)
                 if not file_obj:
                     print(f"❌ GridFS could not open stream for {image_id}")
                     continue
@@ -311,14 +311,14 @@ async def image_agent(state: AgentState) -> dict:
         contents = Content(parts=parts)
 
         print("Generating Image with prompt and image(s)...")
-        response = client.models.generate_content(
+        response = await client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=['TEXT', 'IMAGE']
             )
         )
-
+        print("✅ Gemini Image Generation Response:", response)
         for i, part in enumerate(response.candidates[0].content.parts):
             if part.inline_data:
                 image_bytes = BytesIO(part.inline_data.data)
