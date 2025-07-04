@@ -67,8 +67,6 @@ function Login() {
       if (userData.access_token) {
         localStorage.setItem("access_token", userData.access_token);
         
-        // Also set cookie if needed
-        document.cookie = `access_token=${userData.access_token}; path=/; secure; samesite=lax; max-age=86400`; // 24 hours
       }
 
       login(userData);
