@@ -99,7 +99,9 @@ export const editImageRequest = (
 };
 
 export const getEditedImage = () =>
-  fetch("/api/edit/edited/image", { cache: "no-store" }).then((res) => {
+  fetch("https://genmark-mzoy.onrender.com/api/edit/edited/image", {
+    cache: "no-store",
+  }).then((res) => {
     if (!res.ok) throw new Error("No edited image found");
     return res.blob();
   });
