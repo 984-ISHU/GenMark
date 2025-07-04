@@ -7,6 +7,7 @@ import Project from "./pages/Project";
 import Editor from "./pages/Editor";
 import Profile from "./pages/Profile";
 import Preview from "./pages/Preview";
+import Automation from "./pages/Automation";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 function App() {
@@ -52,6 +53,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Preview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/automation"
+          element={
+            <ProtectedRoute>
+              <Automation />
             </ProtectedRoute>
           }
         />
