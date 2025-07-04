@@ -509,7 +509,7 @@ const Dashboard = () => {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder="Enter project name..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   disabled={creatingProject}
                 />
               </div>
@@ -573,7 +573,7 @@ const Dashboard = () => {
                   value={newDatasetName}
                   onChange={(e) => setNewDatasetName(e.target.value)}
                   placeholder="Enter dataset name..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   disabled={uploadingDataset}
                 />
               </div>
