@@ -5,8 +5,12 @@ from pydantic import BaseModel, EmailStr
 import smtplib
 from email.message import EmailMessage
 import os
+from dotenv import load_dotenv
 
-router = APIRouter()
+load_dotenv()
+
+
+router = APIRouter(prefix="/api", tags=["Send Email"])
 
 # Environment variables should already be loaded in main.py
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
@@ -24,7 +28,6 @@ async def send_email(payload: EmailPayload):
         msg["Subject"] = payload.subject
         msg["From"] = f"GenMark Team <{SENDER_EMAIL}>"
         msg["To"] = ", ".join(payload.recipients)
-        msg.set_content("This email requires an HTML-capable viewer.")
         msg.add_alternative(payload.html_body, subtype="html")
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:

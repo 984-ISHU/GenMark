@@ -83,7 +83,7 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-4 -left-4 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
@@ -208,7 +208,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white p-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+              className="w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 text-white p-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
             >
               {loading ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -245,7 +245,7 @@ function Login() {
                 setEmail("");
                 setPassword("");
               }}
-              className="mt-2 text-purple-600 hover:text-purple-700 font-semibold text-lg transition-colors hover:underline"
+              className="mt-2 bg-gradient-to-br from-slate-400 via-purple-500 to-slate-400 text-gray-800 hover:text-purple-700 font-semibold text-lg transition-colors hover:underline"
             >
               {isLogin ? "Create new account" : "Sign in instead"}
             </button>

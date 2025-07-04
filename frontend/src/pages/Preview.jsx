@@ -8,6 +8,7 @@ import {
   Image,
   ArrowDownToLine,
   Copy,
+  Mail,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -16,7 +17,7 @@ import {
   getGeneratedImageURL,
 } from "@/lib/api";
 
-const PreviewPage = () => {
+const Preview = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state;
@@ -35,8 +36,8 @@ const PreviewPage = () => {
       return;
     }
 
-    const pollInterval = 2000; // every 2 seconds
-    const timeoutDuration = 30000; // 30 seconds
+    const pollInterval = 2000;
+    const timeoutDuration = 30000;
     const startTime = Date.now();
 
     const poll = async () => {
@@ -79,7 +80,7 @@ const PreviewPage = () => {
     };
 
     poll();
-  }, [state, navigate]);
+  }, [state, navigate, textOutput, imageURL]);
 
   const handleEditText = () => {
     navigate(`/editor`, {
@@ -118,13 +119,20 @@ const PreviewPage = () => {
             Project: {projectName}
           </p>
         </div>
-        <div>
+        <div className="flex gap-4">
           <button
             className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
             onClick={() => navigate("/dashboard")}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
+          </button>
+          <button
+            className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
+            onClick={() => navigate("/automation", { state })}
+          >
+            <Mail className="w-4 h-4" />
+            Go to Automation
           </button>
         </div>
       </div>
@@ -136,117 +144,128 @@ const PreviewPage = () => {
           <span className="text-purple-700 font-bold">{projectName}</span>!
         </h2>
         <p className="text-gray-600 mt-2">
-          Review your AI-generated marketing outputs below.
+          Review and edit your AI-generated marketing outputs below.
         </p>
       </div>
 
-      <div className="h-[600px] grid grid-cols-1 lg:grid-cols-2 gap-10 px-10">
-        {/* Image Output */}
-        <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
-              <Image className="w-5 h-5" />
-              Image Output
-            </CardTitle>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEditImage}
-                className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                disabled={imageLoading || !imageURL}
-              >
-                <Edit3 className="w-4 h-4" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const link = document.createElement("a");
-                  link.href = imageURL;
-                  link.download = "generated-image.png";
-                  link.click();
-                }}
-                className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                disabled={!imageURL}
-              >
-                <ArrowDownToLine className="w-4 h-4" />
-                Download
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="flex justify-center items-center h-80 pt-20">
-            {imageLoading ? (
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-purple-600">Generating image...</p>
+      {/* Edit Section */}
+      <div className="mb-12">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-6 px-10">
+          Edit Content
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-10">
+          {/* Image Output */}
+          <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                <Image className="w-5 h-5" />
+                Image Output
+              </CardTitle>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditImage}
+                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                  disabled={imageLoading || !imageURL}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = imageURL;
+                    link.download = "generated-image.png";
+                    link.click();
+                  }}
+                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                  disabled={!imageURL}
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  Download
+                </Button>
               </div>
-            ) : imageURL ? (
-              <div className="h-96 w-full">
-                <img
-                  alt="Generated"
-                  src={imageURL}
-                  className="rounded-xl w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="text-center">
-                <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500 italic">Image not generated yet.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center h-80 pt-20">
+              {imageLoading ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                  <p className="text-purple-600">Generating image...</p>
+                </div>
+              ) : imageURL ? (
+                <div className="h-96 w-full">
+                  <img
+                    alt="Generated"
+                    src={imageURL}
+                    className="rounded-xl w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Image className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500 italic">
+                    Image not generated yet.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Text Output */}
-        <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Text Output
-            </CardTitle>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEditText}
-                className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
-                disabled={textLoading || !textOutput}
-              >
-                <Edit3 className="w-4 h-4" />
-                Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(textOutput);
-                }}
-                className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-              >
-                Copy Text
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="h-80 overflow-y-auto">
-            {textLoading ? (
-              <div className="text-center pt-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                <p className="text-indigo-600">Generating text...</p>
+          {/* Text Output */}
+          <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Text Output
+              </CardTitle>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditText}
+                  className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                  disabled={textLoading || !textOutput}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(textOutput);
+                  }}
+                  className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy Text
+                </Button>
               </div>
-            ) : textOutput ? (
-              <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
-                {textOutput}
-              </div>
-            ) : (
-              <div className="text-center pt-20">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500 italic">Text not generated yet.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="h-80 overflow-y-auto">
+              {textLoading ? (
+                <div className="text-center pt-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-indigo-600">Generating text...</p>
+                </div>
+              ) : textOutput ? (
+                <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
+                  {textOutput}
+                </div>
+              ) : (
+                <div className="text-center pt-20">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500 italic">
+                    Text not generated yet.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -263,4 +282,4 @@ const PreviewPage = () => {
   );
 };
 
-export default PreviewPage;
+export default Preview;

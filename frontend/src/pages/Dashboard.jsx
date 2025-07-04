@@ -11,6 +11,7 @@ import {
   FileText,
   X,
   Loader2,
+  Home
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthContext";
@@ -240,7 +241,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 flex items-center justify-center">
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
           <p className="text-gray-600 text-center">Loading Dashboard...</p>
@@ -250,7 +251,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans">
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -264,12 +265,13 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2">
-                <User className="w-5 h-5 text-white" />
-                <span className="text-white font-medium">
-                  {user?.username || user?.name || "User"}
-                </span>
-              </div>
+            <div 
+              className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/30 transition-colors"
+              onClick={() => navigate('/')}
+            >
+              <Home className="w-5 h-5 text-white" />
+              <span className="text-white font-medium">Home</span>
+            </div>
               <button
                 onClick={() => navigate("/profile")}
                 className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
@@ -531,7 +533,7 @@ const Dashboard = () => {
                     setNewProjectName("");
                   }}
                   disabled={creatingProject}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 border border-gray-300 text-gray-300 rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -616,7 +618,7 @@ const Dashboard = () => {
                     setDatasetFile(null);
                   }}
                   disabled={uploadingDataset}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 border border-gray-300 text-gray-300 rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
