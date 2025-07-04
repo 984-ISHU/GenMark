@@ -89,10 +89,10 @@ const Editor = () => {
       // 1. Try to load locally stored edited image
       try {
         const blob = await getEditedImage();
-        console.log(blob);
+        console.log("Block Output:", blob);
         const url = URL.createObjectURL(blob);
         setImageURL(url);
-        console.log("2nd", url);
+        console.log("Setting URL 2nd:", url);
         imageWasLoadedLocally = true;
         console.log("Loaded locally edited image");
       } catch (err) {
