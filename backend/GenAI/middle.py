@@ -262,6 +262,11 @@ async def image_agent(state: AgentState) -> dict:
         print("Database connection verified")
         bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
 
+        print("✅ [DEBUG] DB:", db)
+        print("✅ [DEBUG] Bucket:", bucket)
+        print("✅ [DEBUG] Bucket Type:", type(bucket))
+
+
         parts = []
 
         # Add the image prompt as the first Part
