@@ -6,7 +6,8 @@ app = FastAPI()
 
 origins = [
     "https://gen-mark.vercel.app",  # ✅ Your deployed frontend
-    "http://localhost:5173",        # Optional for local testing
+    "http://localhost:5173",           # Optional for local testing
+    "https://gen-mark-git-revert-branch-on-main-984-ishus-projects.vercel.app",
 ]
 
 app.add_middleware(
