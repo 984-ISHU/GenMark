@@ -92,7 +92,7 @@ const Editor = () => {
         console.log("Block Output:", blob);
         const url = URL.createObjectURL(blob);
         setImageURL(url);
-        console.log("Setting URL 2nd:", url);
+        console.log("Setting URL 2nnd:", url);
         imageWasLoadedLocally = true;
         console.log("Loaded locally edited image");
       } catch (err) {
