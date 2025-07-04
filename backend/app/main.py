@@ -3,14 +3,14 @@ from app.routes import project, dataset, user, generatedoutput, send_email, edit
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="https://gen-mark.vercel.app",
+    title="Your Project API",
     description="Backend API for managing projects, datasets, products, and users",
     version="1.0.0"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[VITE_APP_URL],  # React dev server
+    allow_origins=["https://gen-mark.vercel.app/"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
