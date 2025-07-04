@@ -250,33 +250,7 @@ async def image_agent(state: dict) -> dict:
 
     prompt = state["image_prompt"]
     project_id = state.get("project_id")
-    user_id = state.get("user_id")
-    product_id = state.get("product_id")
     image_ids = state.get("image_ids")
-
-    # 1. Get product_id if not in state
-    if not product_id:
-        # Get project info to extract product_id
-        async with aiohttp.ClientSession() as session:
-            project_url = f"https://genmark-5qpu.onrender.com/api/project/{user_id}/{project_id}"
-            async with session.get(project_url) as resp:
-                if resp.status != 200:
-                    print(f"❌ Failed to fetch project info: HTTP {resp.status}")
-                    return {"image_bytes": None, "project_id": project_id}
-                project_data = await resp.json()
-                product_id = project_data.get("product_id")
-                state["product_id"] = product_id
-
-    # 2. Get image_ids if not in state
-    if not image_ids:
-        async with aiohttp.ClientSession() as session:
-            image_ids_url = f"https://genmark-5qpu.onrender.com/api/project/uploaded/image/ids/{product_id}"
-            async with session.get(image_ids_url) as resp:
-                if resp.status != 200:
-                    print(f"❌ Failed to fetch image ids: HTTP {resp.status}")
-                    return {"image_bytes": None, "project_id": project_id}
-                image_ids = await resp.json()
-                state["image_ids"] = image_ids
 
     print("Image IDs:", image_ids)
     parts = []
@@ -320,7 +294,7 @@ async def image_agent(state: dict) -> dict:
 
     print("Generating Image with prompt and image(s)...")
     try:
-        response = await client.models.generate_content(
+        response = client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
             contents=contents,
             config=types.GenerateContentConfig(
