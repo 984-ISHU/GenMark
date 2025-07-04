@@ -2,20 +2,20 @@ from fastapi import FastAPI
 from app.routes import project, dataset, user, generatedoutput, send_email, edit_output
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(
-    title="Your Project API",
-    description="Backend API for managing projects, datasets, products, and users",
-    version="1.0.0"
-)
+app = FastAPI()
+
+origins = [
+    "https://gen-mark.vercel.app",  # ✅ Your deployed frontend
+    "http://localhost:5173",        # Optional for local testing
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://gen-mark.vercel.app/"],  # React dev server
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],     # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],     # Allow all headers
 )
-
 
 # Register routers
 app.include_router(dataset.router)
