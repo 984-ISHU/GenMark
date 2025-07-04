@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://genmark.onrender.com/api",
+  baseURL: "http://localhost:8000/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
@@ -80,6 +80,53 @@ export const deleteProject = (projectId) =>
   API.delete(`/project/delete/${projectId}`);
 
 // ============ EDIT/REGENERATE API ============
+export const editTextRequest = (project_id, instruction, original_text) => {
+  return API.post(`/edit/edit_text_output/${project_id}`, {
+    instruction,
+    original_text,
+  });
+};
+
+export const editImageRequest = (
+  project_id,
+  instruction,
+  original_image_id
+) => {
+  return API.post(`/edit/edit_image_output/${project_id}`, {
+    instruction,
+    original_image_id,
+  });
+};
+
+export const getEditedImage = () =>
+  fetch("/api/edit/edited/image", { cache: "no-store" }).then((res) => {
+    if (!res.ok) throw new Error("No edited image found");
+    return res.blob();
+  });
+
+export const deleteEditedImage = () =>
+  fetch("/api/edit/delete/edited/image", { method: "DELETE" });
+
+// Upload generated text
+export const storeEditedText = async (projectId, textFormData) => {
+  return await API.put(
+    `/project/upload-generated-text/${projectId}`,
+    textFormData
+  );
+};
+
+// Upload generated image
+export const storeEditedImage = (projectId, imageFormData) => {
+  return API.put(
+    `/project/upload-generated-image/${projectId}`,
+    imageFormData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
 
 // Regenerate text content with modifications
 export const regenerateText = (projectId, payload) =>

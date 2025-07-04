@@ -1,27 +1,31 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Send, 
-  Save, 
-  RefreshCw, 
-  Image as ImageIcon, 
-  FileText, 
+import {
+  ArrowLeft,
+  Send,
+  Save,
+  RefreshCw,
+  Image as ImageIcon,
+  FileText,
   Wand2,
   Copy,
-  Download
+  Download,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getSpecificProject,
   getGeneratedOutput,
   getGeneratedImageURL,
+  editTextRequest,
+  editImageRequest,
+  getEditedImage,
+  storeEditedText,
+  storeEditedImage,
+  deleteEditedImage,
 } from "@/lib/api";
-import API from "@/lib/api";
 
 // Add these API functions to your api.js file:
 // export const editOutput = (payload) => API.post("/edit_output", payload);
@@ -55,7 +59,7 @@ const Editor = () => {
 
     setProjectId(state.project_id);
     setActiveTab(state.activeTab || "text");
-    
+
     // Set initial content from state if available
     if (state.currentText) {
       setTextOutput(state.currentText);
@@ -69,10 +73,27 @@ const Editor = () => {
   }, [state, navigate]);
 
   const loadProjectData = async () => {
+    let imageWasLoadedLocally = false;
+
     try {
-      const projectRes = await getSpecificProject(state.user_id, state.project_id);
+      // 1. Try to load locally stored edited image
+      try {
+        const blob = await getEditedImage();
+        const url = URL.createObjectURL(blob);
+        setImageURL(url);
+        imageWasLoadedLocally = true;
+        console.log("Loaded locally edited image");
+      } catch (err) {
+        console.log("No edited image found, fallback to original from GridFS");
+      }
+
+      // 2. Load text and image (if needed) from GridFS
+      const projectRes = await getSpecificProject(
+        state.user_id,
+        state.project_id
+      );
       const generated_outputs_id = projectRes.data.generated_outputs_id;
-      
+
       if (generated_outputs_id) {
         const outputRes = await getGeneratedOutput(generated_outputs_id);
         const { text, image } = outputRes.data;
@@ -82,7 +103,7 @@ const Editor = () => {
           setOriginalText(text);
         }
 
-        if (image) {
+        if (image && !imageWasLoadedLocally) {
           setOriginalImageId(image);
           setImageURL(getGeneratedImageURL(image));
         }
@@ -94,32 +115,46 @@ const Editor = () => {
     }
   };
 
-  const handleEditContent = async () => {
+  const handleEditContentText = async () => {
     if (!instruction.trim()) return;
 
     setIsEditing(true);
     try {
-      const editRequest = {
-        project_id: projectId,
-        content_type: activeTab,
-        instruction: instruction,
-        ...(activeTab === "text" 
-          ? { original_text: originalText }
-          : { original_image_id: originalImageId }
-        )
-      };
+      const response = await editTextRequest(
+        projectId,
+        instruction,
+        originalText
+      );
 
-      const response = await API.post("/edit_output", editRequest);
-      
-      if (activeTab === "text") {
-        setTextOutput(response.data.text);
-      } else {
-        const newImageId = response.data.image_id;
-        setImageURL(getGeneratedImageURL(newImageId));
-        setOriginalImageId(newImageId);
-      }
-      
+      setTextOutput(response.data.text);
       setInstruction("");
+    } catch (error) {
+      console.error("Error editing content:", error);
+      alert("Failed to edit content. Please try again.");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleEditContentImage = async () => {
+    if (!instruction.trim()) return;
+
+    setIsEditing(true);
+    try {
+      // Just trigger the backend image generation — no image_id will be returned
+      await editImageRequest(projectId, instruction, originalImageId);
+
+      // Reload image from local `EditImage.jpg`
+      const response = await fetch("/EditImage.jpg", { cache: "no-store" }); // prevent stale image caching
+      if (!response.ok) throw new Error("Failed to fetch edited image");
+
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+
+      setImageURL(imageUrl);
+      setInstruction("");
+
+      console.log("✅ Image edited and loaded");
     } catch (error) {
       console.error("Error editing content:", error);
       alert("Failed to edit content. Please try again.");
@@ -131,24 +166,51 @@ const Editor = () => {
   const handleSaveChanges = async () => {
     setSaving(true);
     try {
-      const saveRequest = {
-        project_id: projectId,
-        text: textOutput,
-        image_id: originalImageId
-      };
+      // 1. Upload Text
+      const textFormData = new FormData();
+      textFormData.append("text", textOutput);
 
-      await API.post("/save_output", saveRequest);
-      
-      // Navigate back to preview with updated state
+      const textUploadResponse = await storeEditedText(projectId, textFormData);
+      if (textUploadResponse.status === 200) {
+        console.log("✅ Text uploaded successfully.");
+      } else {
+        console.warn(
+          "⚠️ Text upload response was not 200:",
+          textUploadResponse
+        );
+      }
+
+      // 2. Try uploading image if EditImage.jpg exists
+      try {
+        const blob = await getEditedImage(); // ⛔ will throw if not found
+
+        const imageFormData = new FormData();
+        imageFormData.append(
+          "image_output",
+          new File([blob], "EditedImage.jpg", { type: "image/jpeg" })
+        );
+
+        const imageUploadResponse = await storeEditedImage(
+          projectId,
+          imageFormData
+        );
+        console.log("✅ Image uploaded:", imageUploadResponse.data);
+      } catch (err) {
+        console.log("⚠️ No edited image found. Skipping image upload.");
+      }
+
+      // 3. Navigate back to preview
       navigate("/preview", {
         state: {
           ...state,
           currentText: textOutput,
-          currentImageURL: imageURL
-        }
+          currentImageURL: imageURL,
+        },
       });
+
+      await deleteEditedImage();
     } catch (error) {
-      console.error("Error saving changes:", error);
+      console.error("❌ Error saving changes:", error);
       alert("Failed to save changes. Please try again.");
     } finally {
       setSaving(false);
@@ -161,9 +223,9 @@ const Editor = () => {
 
   const handleDownloadImage = () => {
     if (imageURL) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = imageURL;
-      link.download = 'edited-image.png';
+      link.download = "edited-image.png";
       link.click();
     }
   };
@@ -196,13 +258,27 @@ const Editor = () => {
         </div>
         <div className="flex gap-3">
           <Button
-            onClick={() => navigate("/preview", { state })}
+            onClick={async () => {
+              try {
+                const response = await deleteEditedImage();
+                if (response.ok) {
+                  console.log("🗑️ Edited image deleted on back navigation.");
+                } else {
+                  console.warn("⚠️ Edited image not found or already deleted.");
+                }
+              } catch (err) {
+                console.error("❌ Error deleting edited image:", err);
+              }
+
+              navigate("/preview", { state });
+            }}
             variant="outline"
             className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Preview
           </Button>
+
           <Button
             onClick={handleSaveChanges}
             disabled={isSaving}
@@ -296,7 +372,7 @@ const Editor = () => {
                     />
                   </div>
                   <Button
-                    onClick={handleEditContent}
+                    onClick={handleEditContentText}
                     disabled={isEditing || !instruction.trim()}
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
                   >
@@ -312,15 +388,19 @@ const Editor = () => {
                       </>
                     )}
                   </Button>
-                  
+
                   {/* Quick Actions */}
                   <div className="border-t pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions:</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Quick Actions:
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Make it more professional and formal")}
+                        onClick={() =>
+                          setInstruction("Make it more professional and formal")
+                        }
                         className="text-xs"
                       >
                         Make Professional
@@ -328,7 +408,9 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Add emojis and make it more engaging")}
+                        onClick={() =>
+                          setInstruction("Add emojis and make it more engaging")
+                        }
                         className="text-xs"
                       >
                         Add Emojis
@@ -336,7 +418,9 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Make it shorter and more concise")}
+                        onClick={() =>
+                          setInstruction("Make it shorter and more concise")
+                        }
                         className="text-xs"
                       >
                         Make Shorter
@@ -344,7 +428,9 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Make it longer with more details")}
+                        onClick={() =>
+                          setInstruction("Make it longer with more details")
+                        }
                         className="text-xs"
                       >
                         Add Details
@@ -433,7 +519,7 @@ const Editor = () => {
                     />
                   </div>
                   <Button
-                    onClick={handleEditContent}
+                    onClick={handleEditContentImage}
                     disabled={isEditing || !instruction.trim() || !imageURL}
                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2"
                   >
@@ -452,12 +538,18 @@ const Editor = () => {
 
                   {/* Quick Actions */}
                   <div className="border-t pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions:</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Quick Actions:
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Make the image brighter and more vibrant")}
+                        onClick={() =>
+                          setInstruction(
+                            "Make the image brighter and more vibrant"
+                          )
+                        }
                         className="text-xs"
                       >
                         Brighten
@@ -465,7 +557,9 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Add a professional clean background")}
+                        onClick={() =>
+                          setInstruction("Add a professional clean background")
+                        }
                         className="text-xs"
                       >
                         Clean Background
@@ -473,7 +567,11 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Add text overlay with the product name")}
+                        onClick={() =>
+                          setInstruction(
+                            "Add text overlay with the product name"
+                          )
+                        }
                         className="text-xs"
                       >
                         Add Text
@@ -481,7 +579,11 @@ const Editor = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setInstruction("Change the style to be more modern and minimalist")}
+                        onClick={() =>
+                          setInstruction(
+                            "Change the style to be more modern and minimalist"
+                          )
+                        }
                         className="text-xs"
                       >
                         Modern Style
