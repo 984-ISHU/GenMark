@@ -105,7 +105,9 @@ export const getEditedImage = () =>
   });
 
 export const deleteEditedImage = () =>
-  fetch("/api/edit/delete/edited/image", { method: "DELETE" });
+  fetch("https://genmark-mzoy.onrender.com/api/edit/delete/edited/image", {
+    method: "DELETE",
+  });
 
 // Upload generated text
 export const storeEditedText = async (projectId, textFormData) => {

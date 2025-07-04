@@ -4,15 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# origins = [
-#     "https://gen-mark.vercel.app",  # ✅ Your deployed frontend
-#     "http://localhost:5173",           # Optional for local testing
-#     "https://gen-mark-git-revert-branch-on-main-984-ishus-projects.vercel.app",
-# ]
+origins = [
+    "https://gen-mark.vercel.app",  # ✅ Your deployed frontend
+    "http://localhost:5173",           # Optional for local testing
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],     # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],     # Allow all headers
