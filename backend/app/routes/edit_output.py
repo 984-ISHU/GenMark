@@ -45,7 +45,17 @@ async def serve_edited_image():
     print(f"📁 Checking for image at: {EDIT_IMAGE_PATH}")
     if not EDIT_IMAGE_PATH.exists():
         raise HTTPException(status_code=404, detail="Edited image not found")
-    return FileResponse(EDIT_IMAGE_PATH)
+    
+    headers = {
+        "Access-Control-Allow-Origin": "*",  # Replace * with actual Vercel URL in production
+        "Cache-Control": "no-cache, no-store, must-revalidate",  # Optional, disable caching
+    }
+    
+    return FileResponse(
+        EDIT_IMAGE_PATH,
+        media_type="image/jpeg",
+        headers=headers,
+    )
 
 @router.delete("/delete/edited/image")
 async def delete_edited_image():
