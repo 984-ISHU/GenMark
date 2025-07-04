@@ -264,13 +264,13 @@ async def image_agent(state: AgentState) -> dict:
             f"{prompt}"
         )))
 
-        # Load images using the API endpoint
+        # Load images using the correct project API endpoint
         async with aiohttp.ClientSession() as session:
             for image_id in image_ids:
-                print(f"Loading image via API: {image_id}")
+                print(f"Loading image via project API: {image_id}")
                 try:
-                    # Call the streaming API endpoint
-                    api_url = f"https://genmark.onrender.com/api/generated_output/image/{image_id}"
+                    # Call the correct streaming API endpoint from project.py
+                    api_url = f"https://genmark.onrender.com/api/project/uploaded/image/{image_id}"
                     
                     async with session.get(api_url) as response:
                         if response.status == 200:
@@ -283,13 +283,13 @@ async def image_agent(state: AgentState) -> dict:
                                 "mime_type": content_type,
                                 "data": image_data
                             }))
-                            print(f"✅ Loaded image {image_id} via API")
+                            print(f"✅ Loaded image {image_id} via project API")
                         else:
                             print(f"❌ Failed to load image {image_id}: HTTP {response.status}")
                             continue
 
                 except Exception as e:
-                    print(f"⚠️ Failed to load image {image_id} via API: {e}")
+                    print(f"⚠️ Failed to load image {image_id} via project API: {e}")
                     continue
 
         if len(parts) == 1:  # Only text prompt, no images loaded
