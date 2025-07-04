@@ -144,7 +144,7 @@ const Automation = () => {
         body: JSON.stringify({
           subject: `GenMark: ${state.projectName}`,
           html_body: html,
-          recipients: []
+          recipients: ['ishux984@gmail.com', 'karanjadhav2003@gmail.com']
         })
       });
 
