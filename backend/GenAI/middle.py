@@ -426,7 +426,7 @@ def video_agent(state: AgentState) -> dict:
         # Step 2: Poll the get_posts endpoint until the video is ready
         video_url = None
         max_attempts = 15
-        wait_interval = 10  # seconds
+        wait_interval = 15  # seconds
         for attempt in range(max_attempts):
             time.sleep(wait_interval)
             get_url = "https://brain.predis.ai/predis_api/v1/get_posts/"
