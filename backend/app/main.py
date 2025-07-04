@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from app.routes import project, dataset, user, generatedoutput, send_email, edit_output
 from fastapi.middleware.cors import CORSMiddleware
 
-
-
 app = FastAPI(
     title="Your Project API",
     description="Backend API for managing projects, datasets, products, and users",
@@ -12,7 +10,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_origins=["https://gen-mark.vercel.app/"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
