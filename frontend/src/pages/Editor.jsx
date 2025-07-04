@@ -67,7 +67,7 @@ const Editor = () => {
     }
     if (state.currentImageURL) {
       setImageURL(state.currentImageURL);
-      console.log(imageURL)
+      console.log(imageURL);
     }
 
     loadProjectData();
@@ -76,7 +76,7 @@ const Editor = () => {
   useEffect(() => {
     return () => {
       // Cleanup image URLs on unmount
-      if (imageURL && imageURL.startsWith('blob:')) {
+      if (imageURL && imageURL.startsWith("blob:")) {
         URL.revokeObjectURL(imageURL);
       }
     };
@@ -89,6 +89,7 @@ const Editor = () => {
       // 1. Try to load locally stored edited image
       try {
         const blob = await getEditedImage();
+        console.log(blob);
         const url = URL.createObjectURL(blob);
         setImageURL(url);
         console.log("2nd", url);
@@ -116,7 +117,7 @@ const Editor = () => {
 
         if (image && !imageWasLoadedLocally) {
           setOriginalImageId(image);
-          console.log("3rd:", getGeneratedImageURL(image))
+          console.log("3rd:", getGeneratedImageURL(image));
           setImageURL(getGeneratedImageURL(image));
         }
       }
@@ -161,7 +162,7 @@ const Editor = () => {
         "https://genmark-mzoy.onrender.com/api/edit/edited/image",
         { cache: "no-store" }
       );
- // prevent stale image caching
+      // prevent stale image caching
       if (!response.ok) throw new Error("Failed to fetch edited image");
 
       const blob = await response.blob();
@@ -498,11 +499,11 @@ const Editor = () => {
                     </div>
                   ) : imageURL ? (
                     <div className="max-w-full max-h-[80vh] overflow-auto">
-                     <img
+                      <img
                         src={imageURL}
                         alt="Generated content"
                         className="rounded-xl w-auto h-auto max-w-full max-h-[80vh] mx-auto"
-                      /> 
+                      />
                     </div>
                   ) : (
                     <div className="text-center">
