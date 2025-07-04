@@ -217,7 +217,7 @@ def text_agent(state: AgentState) -> dict:
         print("Generated Text:\n", generated_text)
 
         # Upload to FastAPI endpoint
-        api_url = f"https://genmark.onrender.com/api/project/upload-generated-text/{project_id}"
+        api_url = f"https://genmark-5qpu.onrender.com/api/project/upload-generated-text/{project_id}"
 
         try:
             res = requests.put(
@@ -258,7 +258,7 @@ async def image_agent(state: dict) -> dict:
     if not product_id:
         # Get project info to extract product_id
         async with aiohttp.ClientSession() as session:
-            project_url = f"https://genmark.onrender.com/api/project/{user_id}/{project_id}"
+            project_url = f"https://genmark-5qpu.onrender.com/api/project/{user_id}/{project_id}"
             async with session.get(project_url) as resp:
                 if resp.status != 200:
                     print(f"❌ Failed to fetch project info: HTTP {resp.status}")
@@ -270,7 +270,7 @@ async def image_agent(state: dict) -> dict:
     # 2. Get image_ids if not in state
     if not image_ids:
         async with aiohttp.ClientSession() as session:
-            image_ids_url = f"https://genmark.onrender.com/api/project/uploaded/image/ids/{product_id}"
+            image_ids_url = f"https://genmark-5qpu.onrender.com/api/project/uploaded/image/ids/{product_id}"
             async with session.get(image_ids_url) as resp:
                 if resp.status != 200:
                     print(f"❌ Failed to fetch image ids: HTTP {resp.status}")
@@ -294,7 +294,7 @@ async def image_agent(state: dict) -> dict:
         for image_id in image_ids:
             print(f"Loading image via project API: {image_id}")
             try:
-                api_url = f"https://genmark.onrender.com/api/project/uploaded/image/{image_id}"
+                api_url = f"https://genmark-5qpu.onrender.com/api/project/uploaded/image/{image_id}"
                 async with session.get(api_url) as response:
                     if response.status == 200:
                         image_data = await response.read()
@@ -356,7 +356,7 @@ async def image_upload_agent(state: dict) -> dict:
         return {"image_output": None}
 
     try:
-        api_url = f"https://genmark.onrender.com/api/project/upload-generated-image/{project_id}"
+        api_url = f"https://genmark-5qpu.onrender.com/api/project/upload-generated-image/{project_id}"
         print(f"Uploading to: {api_url}")
 
         async with aiohttp.ClientSession() as session:
@@ -466,7 +466,7 @@ def video_agent(state: AgentState) -> dict:
             return {"video_output": None}
 
         # Step 3: Upload the video URL to backend
-        backend_url = f"https://genmark.onrender.com/api/project/upload-generated-video/{project_id}"
+        backend_url = f"https://genmark-5qpu.onrender.com/api/project/upload-generated-video/{project_id}"
         upload_payload = {"video_output": video_url}
 
         upload_res = requests.put(backend_url, data=upload_payload, timeout=10)
@@ -491,7 +491,7 @@ def router_op(state: AgentState) -> dict:
     project_id = state.get("project_id")
 
     try:
-        api_url = f"https://genmark.onrender.com/api/project/update/generated-output/{project_id}"
+        api_url = f"https://genmark-5qpu.onrender.com/api/project/update/generated-output/{project_id}"
         res = requests.put(
             api_url, 
             data={"project_id": project_id},
