@@ -117,7 +117,7 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
         httponly=True, 
         secure=True, 
         samesite="None",  # ⬅ required for cross-origin cookie
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        max_age=10080
     )
 
 

@@ -50,10 +50,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (contextUser) {
       const userData = {
-        id: contextUser.id || contextUser.user?.id,
-        username: contextUser.username || contextUser.user?.username || "",
-        email: contextUser.email || contextUser.user?.email || "",
-      };
+          id: contextUser._id || contextUser.id || contextUser.user?._id || contextUser.user?.id,
+          username: contextUser.username || contextUser.user?.username || "",
+          email: contextUser.email || contextUser.user?.email || "",
+        };
+
       setUser(userData);
       setLoading(false);
     } else {
@@ -89,16 +90,20 @@ const Dashboard = () => {
   };
 
   // Fetch projects and datasets when user is loaded
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-      fetchDatasets();
-    }
-  }, [user]);
+    useEffect(() => {
+      console.log("User state before fetching:", user);
+      if (user?.id) {
+        fetchProjects();
+        fetchDatasets();
+      }
+    }, [user]);
 
   // Fetch user's projects
   const fetchProjects = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.warn("Missing user.id — skipping fetchProjects()");
+      return;
+    }
     console.log("Inside Fetch Projects");
     setProjectsLoading(true);
     try {
@@ -116,7 +121,10 @@ const Dashboard = () => {
 
   // Fetch user's datasets
   const fetchDatasets = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.warn("Missing user.id — skipping fetcDatasets()");
+      return;
+    }
 
     setDatasetsLoading(true);
     try {
