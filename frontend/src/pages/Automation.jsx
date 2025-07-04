@@ -136,7 +136,7 @@ const Automation = () => {
         .replace("{textOutput}", textOutput);
       
       console.log(html)
-      const response = await fetch('https://genmark-5qpu.onrender.com/api/send-email', {
+      const response = await fetch('https://genmark-mzoy.onrender.com/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ const Automation = () => {
         body: JSON.stringify({
           subject: `GenMark: ${state.projectName}`,
           html_body: html,
-          recipients: []
+          recipients: ['ishux984@gmail.com', 'karanjadhav2003@gmail.com']
         })
       });
 
