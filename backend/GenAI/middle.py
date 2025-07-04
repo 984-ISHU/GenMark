@@ -240,66 +240,86 @@ def text_agent(state: AgentState) -> dict:
         return {"text_output": None}
     
 
-
-async def image_agent(state: AgentState) -> dict:
+async def image_agent(state: dict) -> dict:
     print("Inside Image Generator")
 
+    # Early exit if prompt missing
     if not state.get("image_prompt"):
         print("No image prompt found, skipping image generation")
         return {"image_bytes": None, "project_id": state.get("project_id")}
 
     prompt = state["image_prompt"]
     project_id = state.get("project_id")
-    image_ids = state.get("image_ids", [])
-    print("Image IDs:", image_ids)
+    user_id = state.get("user_id")
+    product_id = state.get("product_id")
+    image_ids = state.get("image_ids")
 
-    try:
-        parts = []
-
-        # Add the image prompt as the first Part
-        parts.append(Part(text=(
-            "You are an expert marketing image generator.\n"
-            "Always preserve the product's exact appearance as seen in the uploaded image(s).\n"
-            "Only generate the background, context, or marketing setting based on the prompt below:\n\n"
-            f"{prompt}"
-        )))
-
-        # Load images using the correct project API endpoint
+    # 1. Get product_id if not in state
+    if not product_id:
+        # Get project info to extract product_id
         async with aiohttp.ClientSession() as session:
-            for image_id in image_ids:
-                print(f"Loading image via project API: {image_id}")
-                try:
-                    # Call the correct streaming API endpoint from project.py
-                    api_url = f"https://genmark.onrender.com/api/project/uploaded/image/{image_id}"
-                    
-                    async with session.get(api_url) as response:
-                        if response.status == 200:
-                            image_data = await response.read()
-                            
-                            # Determine content type from response headers
-                            content_type = response.headers.get('content-type', 'image/jpeg')
-                            
-                            parts.append(Part(inline_data={
-                                "mime_type": content_type,
-                                "data": image_data
-                            }))
-                            print(f"✅ Loaded image {image_id} via project API")
-                        else:
-                            print(f"❌ Failed to load image {image_id}: HTTP {response.status}")
-                            continue
+            project_url = f"https://genmark.onrender.com/api/project/{user_id}/{project_id}"
+            async with session.get(project_url) as resp:
+                if resp.status != 200:
+                    print(f"❌ Failed to fetch project info: HTTP {resp.status}")
+                    return {"image_bytes": None, "project_id": project_id}
+                project_data = await resp.json()
+                product_id = project_data.get("product_id")
+                state["product_id"] = product_id
 
-                except Exception as e:
-                    print(f"⚠️ Failed to load image {image_id} via project API: {e}")
-                    continue
+    # 2. Get image_ids if not in state
+    if not image_ids:
+        async with aiohttp.ClientSession() as session:
+            image_ids_url = f"https://genmark.onrender.com/api/project/uploaded/image/ids/{product_id}"
+            async with session.get(image_ids_url) as resp:
+                if resp.status != 200:
+                    print(f"❌ Failed to fetch image ids: HTTP {resp.status}")
+                    return {"image_bytes": None, "project_id": project_id}
+                image_ids = await resp.json()
+                state["image_ids"] = image_ids
 
-        if len(parts) == 1:  # Only text prompt, no images loaded
-            print("❌ No images were successfully loaded")
-            return {"image_bytes": None, "project_id": project_id}
+    print("Image IDs:", image_ids)
+    parts = []
 
-        # Construct content from parts
-        contents = Content(parts=parts)
+    # Add the image prompt as the first Part
+    parts.append(Part(text=(
+        "You are an expert marketing image generator.\n"
+        "Always preserve the product's exact appearance as seen in the uploaded image(s).\n"
+        "Only generate the background, context, or marketing setting based on the prompt below:\n\n"
+        f"{prompt}"
+    )))
 
-        print("Generating Image with prompt and image(s)...")
+    # 3. Load images using correct endpoint
+    async with aiohttp.ClientSession() as session:
+        for image_id in image_ids:
+            print(f"Loading image via project API: {image_id}")
+            try:
+                api_url = f"https://genmark.onrender.com/api/project/uploaded/image/{image_id}"
+                async with session.get(api_url) as response:
+                    if response.status == 200:
+                        image_data = await response.read()
+                        content_type = response.headers.get('content-type', 'image/jpeg')
+                        parts.append(Part(inline_data={
+                            "mime_type": content_type,
+                            "data": image_data
+                        }))
+                        print(f"✅ Loaded image {image_id} via project API")
+                    else:
+                        print(f"❌ Failed to load image {image_id}: HTTP {response.status}")
+                        continue
+            except Exception as e:
+                print(f"⚠️ Failed to load image {image_id} via project API: {e}")
+                continue
+
+    if len(parts) == 1:  # Only text prompt, no images loaded
+        print("❌ No images were successfully loaded")
+        return {"image_bytes": None, "project_id": project_id}
+
+    # Construct content from parts
+    contents = Content(parts=parts)
+
+    print("Generating Image with prompt and image(s)...")
+    try:
         response = await client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
             contents=contents,
@@ -307,10 +327,7 @@ async def image_agent(state: AgentState) -> dict:
                 response_modalities=['TEXT', 'IMAGE']
             )
         )
-        
         print("✅ Gemini Image Generation Response received")
-        
-        # Extract the generated image
         for i, part in enumerate(response.candidates[0].content.parts):
             if part.inline_data:
                 image_bytes = BytesIO(part.inline_data.data)
@@ -320,11 +337,9 @@ async def image_agent(state: AgentState) -> dict:
 
         print("❌ No valid image part found in response")
         return {"image_bytes": None, "project_id": project_id}
-
     except Exception as e:
         print(f"❌ Image generation failed: {e}")
         return {"image_bytes": None, "project_id": project_id}
-
 
 # ----- IMAGE UPLOAD AGENT -----
 async def image_upload_agent(state: dict) -> dict:
