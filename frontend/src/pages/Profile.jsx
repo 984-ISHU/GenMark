@@ -213,7 +213,7 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans p-6 overflow-hidden flex items-center justify-center">
+      <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans p-6 overflow-hidden flex items-center justify-center">
         <div className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-purple-700 font-semibold">
@@ -225,22 +225,34 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans p-6 overflow-hidden">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
-            GenMark
-          </h1>
-          <p className="text-font-bold mt-1">👤 Profile Settings</p>
-        </div>
-        <div>
-          <button
-            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
-            onClick={() => navigate("/dashboard")}
-          >
-            🧠 Back to Dashboard
-          </button>
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">
+                GenMark
+              </h1>
+              <p className="text-white/90 mt-1 font-medium">
+                🎯 Personalized Marketing Studio
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2">
+                <User className="w-5 h-5 text-white" />
+                <span className="text-white font-medium">
+                  {user?.username || user?.name || "User"}
+                </span>
+              </div>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
+              >
+                🧠 Back to Dashboard
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
