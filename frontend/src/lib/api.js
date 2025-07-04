@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "https://genmark.onrender.com/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 

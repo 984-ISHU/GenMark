@@ -48,10 +48,10 @@ const Home = () => {
   ];
 
   return (
-    <div className="w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans text-white">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans text-white overflow-x-hidden">
       {/* Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 bg-black/20 backdrop-blur-lg border-b border-purple-400/10 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <nav className="fixed top-0 left-0 right-0 bg-black/20 backdrop-blur-lg border-b border-white/10 z-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               GenMark
@@ -117,7 +117,7 @@ const Home = () => {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
+      <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-4 md:px-6 pt-20">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-6xl md:text-7xl font-extrabold mb-6 leading-tight">
@@ -142,7 +142,7 @@ const Home = () => {
       </section>
 
       {/* How it Works */}
-      <section id="how-it-works" className="min-h-screen flex flex-col justify-center py-20 px-6 bg-gradient-to-br from-slate-800 to-purple-900">
+      <section id="how-it-works" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-slate-800 to-purple-900">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -182,7 +182,7 @@ const Home = () => {
       </section>
 
       {/* Key Features */}
-      <section id="features" className="min-h-screen flex flex-col justify-center py-20 px-6 bg-gradient-to-br from-purple-900 to-slate-800">
+      <section id="features" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-purple-900 to-slate-800">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -222,7 +222,7 @@ const Home = () => {
       </section>
 
       {/* Live Preview / Demos */}
-      <section id="preview" className="min-h-screen flex flex-col justify-center py-20 px-6 bg-gradient-to-br from-slate-800 to-purple-900">
+      <section id="preview" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-slate-800 to-purple-900">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
             <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
@@ -266,7 +266,7 @@ const Home = () => {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="min-h-screen flex flex-col justify-center py-20 px-6 bg-gradient-to-br from-purple-900 to-slate-800">
+      <section id="testimonials" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-purple-900 to-slate-800">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -311,8 +311,8 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="py-8 text-center text-white/60 text-sm border-t border-white/10 bg-black/20 backdrop-blur-lg">
-        <div className="max-w-7xl mx-auto px-6">
-          <p>© 2025 GenMark. All rights reserved.</p>
+                  <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <p>© 2025 GenMark. All rights reserved. | Powered by AI • Built for Marketers</p>
         </div>
       </footer>
     </div>

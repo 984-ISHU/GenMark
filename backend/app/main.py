@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from app.routes import project, dataset, user, generatedoutput, send_email, edit_output
 from fastapi.middleware.cors import CORSMiddleware
+import os
+from dotenv import load_dotenv
 
-
+load_dotenv()
+VITE_APP_URL = os.getenv('VITE_APP_UL')
 
 app = FastAPI(
     title="Your Project API",
@@ -12,7 +15,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_origins=[VITE_APP_URL],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
