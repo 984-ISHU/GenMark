@@ -58,6 +58,17 @@ const Project = () => {
   const [selectedAges, setSelectedAges] = useState([]);
   const isAllSelected = selectedAges.includes("ALL");
 
+  useEffect(() => {
+    if (!selectedGender) {
+      setSelectedGender("both");
+    }
+
+    if (selectedAges.length === 0) {
+      setSelectedAges(["ALL"]);
+    }
+  }, []);
+
+
   // Initialize user data
   useEffect(() => {
     if (contextUser) {
@@ -136,10 +147,19 @@ const Project = () => {
   useEffect(() => {
     const selected = datasets.find((d) => d.dataset_name === selectedDataset);
     if (selected) {
-      setCategories(selected.categories || []);
-      setLocations(selected.locations || []);
-      setCategory("");
-      setLocation("");
+      const newCategories = selected.categories || [];
+      const newLocations = selected.locations || [];
+
+      setCategories(newCategories);
+      setLocations(newLocations);
+
+      if (!category && newCategories.length > 0) {
+        setCategory(newCategories[0]);
+      }
+
+      if (!location && newLocations.length > 0) {
+        setLocation(newLocations[0]);
+      }
     } else {
       setCategories([]);
       setLocations([]);
@@ -261,6 +281,35 @@ const Project = () => {
       setCreating(false);
     }
   };
+
+  const handleAutofillFromUrl = async () => {
+  if (!productUrl) {
+    alert("Please enter a valid product URL first.");
+    return;
+  }
+
+  try {
+    const res = await axios.get(
+      `https://genmark-mzoy.onrender.com/scrape-product`,
+      { params: { url: productUrl } }
+    );
+    const data = res.data;
+
+    setProductName(data.product_name || "");
+    setPrice(data.price || "");
+    setDescription(data.description || "");
+
+    if (data.image) {
+      const imgBlob = await fetch(data.image).then(r => r.blob());
+      const file = new File([imgBlob], "product.jpg", { type: imgBlob.type });
+      setProductImages([file]);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Could not fetch product details. The website might be blocking scraping.");
+  }
+};
+
 
   // Handle file upload
   const handleFileUpload = (e) => {
@@ -402,6 +451,12 @@ const Project = () => {
                 className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 onChange={(e) => setProductUrl(e.target.value)}
               />
+              <Button
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl"
+                onClick={handleAutofillFromUrl}
+              >
+                Autofill from URL
+              </Button>
             </div>
 
             {/* Description */}
