@@ -147,7 +147,7 @@ const Automation = () => {
           recipients: ['ishux984@gmail.com', 'karanjadhav2003@gmail.com']
         })
       });
-
+ 
       if (!response.ok) {
         throw new Error('Failed to send email');
       }
