@@ -332,7 +332,7 @@ const Project = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 flex items-center justify-center">
+      <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans flex items-center justify-center">
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
           <p className="text-gray-600 text-center">Loading Project...</p>
