@@ -345,21 +345,20 @@ const Project = () => {
   if (project_name === null) return null;
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-300 via-pink-400 to-indigo-300 font-sans p-6 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
-            GenMark
-          </h1>
-          <p className="text-font-bold mt-1">
-            🎯 Personalized Marketing Studio
-          </p>
-          <p className="text-purple-600 font-medium mt-2">
-            Project: {project_name}
-          </p>
-        </div>
-        <div>
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans p-6 overflow-hidden">
+      {/* Header */}      
+      <div className="fixed top-0 inset-x-0 bg-black/20 backdrop-blur-lg border-b border-white/10 z-50 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">
+                GenMark
+              </h1>
+              <p className="text-white/90 mt-1 font-medium">
+                🎯 Personalized Marketing Studio
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
           <button
             className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
             onClick={() => {
@@ -370,10 +369,12 @@ const Project = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-6 scale-75">
         {/* Product Details Card */}
         <Card className="bg-white/80 backdrop-blur-lg border border-purple-200 shadow-2xl hover:shadow-purple-300 transition-shadow duration-300 rounded-2xl p-6">
           <CardHeader className="text-center pb-4">
@@ -646,67 +647,65 @@ const Project = () => {
         </Card>
 
         {/* Output Format Card */}
-        <Card className="bg-white/80 backdrop-blur-md border border-indigo-200 shadow-xl hover:shadow-indigo-300 transition-all duration-300 rounded-2xl">
-          <CardHeader className="text-center pb-2 pt-6">
-            <CardTitle className="text-2xl font-bold text-indigo-700 flex items-center justify-center gap-3">
-              <span className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg">
-                🎨
-              </span>
-              Output Format
-            </CardTitle>
-            <p className="text-sm text-gray-500 mt-2">
-              Customize how your AI-generated content should look.
-            </p>
-          </CardHeader>
+        <Card className="bg-white/80 backdrop-blur-md border border-indigo-200 shadow-xl hover:shadow-indigo-300 transition-all duration-300 rounded-2xl text-sm sm:text-base">
+  <CardHeader className="text-center pb-4">
+    <CardTitle className="text-2xl font-bold text-indigo-700 flex items-center justify-center gap-3">
+      <span className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg">
+        🎨
+      </span>
+      Output Format
+    </CardTitle>
+  </CardHeader>
 
-          <CardContent className="px-6 pb-6">
-            <div className="space-y-2">
-              <label
-                htmlFor="output-description"
-                className="block text-sm font-medium text-gray-700"
-              >
-                💭 Describe your custom output format *
-              </label>
-              <Textarea
-                id="output-description"
-                className="w-full bg-white/90 text-gray-800 p-4 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 transition-all duration-200 shadow-sm placeholder-gray-400"
-                placeholder="e.g., 'A catchy social media post with emojis, compelling headline, and call-to-action for Instagram targeting young professionals aged 25-35.'"
-                rows={6}
-                value={customOutputDescription}
-                onChange={(e) => setCustomOutputDescription(e.target.value)}
-              />
-              <p className="text-xs text-gray-500">
-                Tip: Be specific about tone, format, platform, style, and target
-                audience preferences.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  <CardContent className="px-6 pb-6">
+    <div className="space-y-2">
+      <label
+        htmlFor="output-description"
+        className="block text-l font-medium text-gray-700"
+      >
+        💭 Describe your custom output format *
+      </label>
+      <Textarea
+        id="output-description"
+        className="w-full bg-white/90 text-xl text-gray-800 p-4 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 transition-all duration-200 shadow-sm placeholder-gray-400"
+        placeholder="e.g., 'A catchy social media post with emojis, compelling headline, and call-to-action for Instagram targeting young professionals aged 25-35.'"
+        rows={6}
+        value={customOutputDescription}
+        onChange={(e) => setCustomOutputDescription(e.target.value)}
+      />
+      <p className="text-l text-gray-500">
+        Tip: Be specific about tone, format, platform, style, and target
+        audience preferences.
+      </p>
+    </div>
+  </CardContent>
 
-      {/* Generate Button */}
-      <div className="flex justify-center mt-10">
-        <Button
-          onClick={handleGenerate}
-          disabled={creating}
-          className="text-white px-12 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all duration-200 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
-        >
-          {creating ? (
-            <>
-              <Loader2 className="w-6 h-6 animate-spin" />
-              Creating Project...
-            </>
-          ) : (
-            <>🚀 Generate Marketing Content</>
-          )}
-        </Button>
-      </div>
+  <CardContent className="px-6 pb-6 space-y-4">
+    <div className="pt-4">
+      <Button
+        onClick={handleGenerate}
+        disabled={creating}
+        className="w-full text-white py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all duration-200 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+      >
+        {creating ? (
+          <>
+            <Loader2 className="w-6 h-6 animate-spin" />
+            Creating Project...
+          </>
+        ) : (
+          <>🚀 Generate Marketing Content</>
+        )}
+      </Button>
+    </div>
 
-      {/* Required Fields Notice */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          * Required fields must be filled before generating content
-        </p>
+    <div className="mt-6 text-center">
+      <p className="text-sm text-gray-600">
+        * Required fields must be filled before generating content
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
       </div>
     </div>
   );

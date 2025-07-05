@@ -270,10 +270,10 @@ const Profile = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto py-10">
         {/* Profile Header Card */}
         <div className="bg-white/80 backdrop-blur-lg border border-purple-200 shadow-2xl hover:shadow-purple-300 transition-shadow duration-300 rounded-2xl mb-6">
-          <div className="bg-gradient-to-r from-purple-500 to-fuchsia-600 px-8 py-8 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-purple-500 to-fuchsia-600 px-8 py-8 rounded-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="bg-white rounded-full p-4 mr-6">

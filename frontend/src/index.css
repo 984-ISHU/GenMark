@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  @apply w-full min-h-screen overflow-x-hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE and Edge */
+}
+
+body::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

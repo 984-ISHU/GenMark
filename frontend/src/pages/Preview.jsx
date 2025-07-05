@@ -284,7 +284,48 @@ const Preview = () => {
                     </Card>
                   )}
 
-                  {/* Text Section - Only show if text exists or is loading */}
+                  {/* Video Section - Only show if video exists or is loading */}
+              {showVideoSection && (
+                <div className="mt-10 px-10">
+                  <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
+                        🎥 Video Output
+                      </CardTitle>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = videoURL;
+                            link.download = "generated-video.mp4";
+                            link.click();
+                          }}
+                          className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                          disabled={!videoURL}
+                        >
+                          <ArrowDownToLine className="w-4 h-4" />
+                          Download
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex justify-center items-center pt-6">
+                      {videoURL ? (
+                        <video
+                          controls
+                          src={videoURL}
+                          className="rounded-xl max-w-full max-h-[600px]"
+                        />
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+              </div>
+              )}
+
+              {/* Text Section - Only show if text exists or is loading */}
                   {showTextSection && (
                     <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -326,47 +367,6 @@ const Preview = () => {
                       </CardContent>
                     </Card>
                   )}
-                </div>
-              )}
-
-              {/* Video Section - Only show if video exists or is loading */}
-              {showVideoSection && (
-                <div className="mt-10 px-10">
-                  <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
-                        🎥 Video Output
-                      </CardTitle>
-                      <div className="grid grid-cols-1 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = videoURL;
-                            link.download = "generated-video.mp4";
-                            link.click();
-                          }}
-                          className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                          disabled={!videoURL}
-                        >
-                          <ArrowDownToLine className="w-4 h-4" />
-                          Download
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex justify-center items-center pt-6">
-                      {videoURL ? (
-                        <video
-                          controls
-                          src={videoURL}
-                          className="rounded-xl max-w-full max-h-[600px]"
-                        />
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
             </div>
           )}
 
