@@ -75,7 +75,6 @@ function Login() {
       // Don't manually set cookies - let the backend handle httpOnly cookies
       // Store user data in localStorage and context
       if (userData.user) {
-        localStorage.setItem("user", JSON.stringify(userData.user));
         login(userData.user);
       } else {
         // Fallback for registration response
