@@ -245,6 +245,7 @@ const Project = () => {
         navigate("/preview", {
           state: {
             name: user.username,
+            selected_dataset: selectedDataset,
             user_id: user.id,
             projectName: project_name,
             project_id: response.data.project_id,
