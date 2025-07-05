@@ -151,7 +151,7 @@ const Automation = () => {
         .replace("{textOutput}", textOutput);
 
       console.log(html);
-      const response = await fetch("http://127.0.0.1:8000/api/send-email", {
+      const response = await fetch("https://genmark-mzoy.onrender.com/api/send-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -367,7 +367,7 @@ const Automation = () => {
               onClick={async () => {
                 try {
                   const response = await fetch(
-                    "http://127.0.0.1:8000/api/datasets/save-filtered-head",
+                    "https://genmark-mzoy.onrender.com/api/datasets/save-filtered-head",
                     {
                       method: "POST",
                       headers: {
