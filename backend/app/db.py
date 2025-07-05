@@ -17,3 +17,4 @@ dataset_collection = db["Datasets"]
 
 # GridFS bucket
 grid_fs = AsyncIOMotorGridFSBucket(db, "CSVDatasetBucket")
+grid_fs_filtered = AsyncIOMotorGridFSBucket(db, "CSVDatasetBucket")

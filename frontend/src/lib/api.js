@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://genmark-mzoy.onrender.com/api",
+  baseURL: "http://127.0.0.1:8000/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
@@ -24,6 +24,16 @@ export const logoutUser = () => API.post("/user/logout");
 export const getDatasets = () => API.get("/datasets/");
 export const getUserDatasets = (user_id) => API.get(`/datasets/${user_id}`);
 
+export const checkFilteredDatasetExists = (user_id, project_id) =>
+  API.get("/datasets/check-filtered-exists", {
+    params: { user_id, project_id },
+  });
+
+export const getFilteredDataset = (user_id, project_id) =>
+  API.get("/datasets/filtered-data", {
+    params: { user_id, project_id },
+  });
+
 export const getDataset = (datasetId) => API.get(`/datasets/${datasetId}`);
 export const deleteDataset = (datasetId) =>
   API.delete(`/datasets/${datasetId}`);
@@ -42,7 +52,7 @@ export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `https://genmark-mzoy.onrender.com/api/generated_output/image/${image_id}`;
+  `http://127.0.0.1:8000/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
@@ -99,7 +109,7 @@ export const editImageRequest = (
 };
 
 export const getEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/edited/image", {
     cache: "no-store",
   }).then((res) => {
     if (!res.ok) throw new Error("No edited image found");
@@ -107,7 +117,7 @@ export const getEditedImage = () =>
   });
 
 export const deleteEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/delete/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/delete/edited/image", {
     method: "DELETE",
   });
 
