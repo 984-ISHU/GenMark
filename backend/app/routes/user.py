@@ -112,13 +112,15 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
     access_token = create_access_token(data={"sub": user["username"]})
 
     response.set_cookie(
-        key="access_token", 
-        value=access_token, 
-        httponly=True, 
-        secure=True, 
-        samesite=None,
-        max_age=10080
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=60 * 60 * 24 * 7, 
+        path="/"
     )
+
 
     # Return consistent user data structure
     return {
