@@ -159,7 +159,7 @@ const Editor = () => {
 
       // Reload image from local `EditImage.jpg`
       const response = await fetch(
-        "http://127.0.0.1:8000/api/edit/edited/image",
+        "https://genmark-mzoy.onrender.com/api/edit/edited/image",
         { cache: "no-store" }
       );
       // prevent stale image caching

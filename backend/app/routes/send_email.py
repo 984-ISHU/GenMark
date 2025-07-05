@@ -24,6 +24,10 @@ class EmailPayload(BaseModel):
 @router.post("/send-email")
 async def send_email(payload: EmailPayload):
     try:
+        print("Sending email to:", payload.recipients)
+        print("Subject:", payload.subject)
+        print("Body snippet:", payload.html_body[:100])
+
         msg = EmailMessage()
         msg["Subject"] = payload.subject
         msg["From"] = f"GenMark Team <{SENDER_EMAIL}>"
@@ -37,8 +41,11 @@ async def send_email(payload: EmailPayload):
         return {"success": True, "message": "Email sent successfully"}
 
     except smtplib.SMTPAuthenticationError:
+        print("❌ SMTP Auth Failed")
         raise HTTPException(status_code=401, detail="Authentication failed.")
     except smtplib.SMTPRecipientsRefused:
+        print("❌ Recipient refused")
         raise HTTPException(status_code=400, detail="One or more recipients were refused.")
     except Exception as e:
+        print("❌ Unhandled Error:", str(e))
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
