@@ -116,7 +116,7 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
         value=access_token, 
         httponly=True, 
         secure=True, 
-        samesite="Lax",
+        samesite=None,
         max_age=10080
     )
 
