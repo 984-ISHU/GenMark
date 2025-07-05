@@ -157,7 +157,7 @@ const Automation = () => {
       alert('Failed to send email');
     } finally {
       setIsSending(false);
-    }
+    } 
   };
 
   const handlePreviousTemplate = () => {
