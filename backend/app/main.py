@@ -29,3 +29,6 @@ app.include_router(edit_output.router)
 async def root():
     return {"message": "Welcome to the API"}
 
+@app.api_route("/", methods=["GET", "HEAD"])
+async def root_health():
+    return {"status": "ok"}
