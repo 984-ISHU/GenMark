@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getUserProfile } from "../lib/api"; // Import this to fetch profile using cookie
+import { getUserProfile, logoutUser } from "../lib/api";
 
 const AuthContext = createContext();
 
@@ -7,17 +7,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from cookie/session on initial mount
+  // On mount, fetch the user using the session cookie
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await getUserProfile(); // This will use the httpOnly cookie
-        setUser(res.data); // Set user from API
+        const res = await getUserProfile();
+        setUser(res.data);
       } catch (err) {
-        console.log("No active session");
-        setUser(null); // Not logged in
+        console.log("Not logged in or session expired.");
+        setUser(null);
       } finally {
-        setLoading(false); // Done loading
+        setLoading(false);
       }
     };
 
@@ -25,11 +25,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
-    setUser(userData); // You might not need localStorage anymore
+    setUser(userData); // Called after successful login
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await logoutUser(); // Invalidate session on backend
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setUser(null); // Clear context
+    }
   };
 
   return (

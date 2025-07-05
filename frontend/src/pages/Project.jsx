@@ -251,7 +251,7 @@ const Project = () => {
             project_id: response.data.project_id,
           },
         });
-      }, 1500);
+      }, 1000);
     } catch (error) {
       console.error("Error creating project:", error);
       toast.error("Failed to create project", {

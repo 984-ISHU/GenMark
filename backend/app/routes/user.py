@@ -112,23 +112,26 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
     access_token = create_access_token(data={"sub": user["username"]})
 
     response.set_cookie(
-        key="access_token", 
-        value=access_token, 
-        httponly=True, 
-        secure=True, 
-        samesite="None",  # ⬅ required for cross-origin cookie
-        max_age=10080
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=60 * 60 * 24 * 7, 
+        path="/"
     )
 
+
+    # Return consistent user data structure
     return {
         "access_token": access_token,
         "user": {
-            "id": str(user["_id"]),
-            "username": user["username"]
+            "id": str(user["_id"]),  # Include user ID
+            "username": user["username"],
+            "email": user["email"],  # Include email for consistency
+            "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None
         }
     }
-
-
 
 @router.get("/userdetails/by-username")
 async def get_userdetails_by_username(username: str, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -159,7 +162,10 @@ async def get_profile(request: Request, db: AsyncIOMotorDatabase = Depends(get_d
     user = await db["Users"].find_one({"username": username})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return user data with ID included
     return {
+        "id": str(user["_id"]),  # Include user ID
         "username": user["username"], 
         "email": user["email"],
         "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None
@@ -228,5 +234,5 @@ async def change_password(payload: ChangePassword, request: Request, db: AsyncIO
 
 @router.post("/logout")
 async def logout_user(response: Response):
-    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="Lax")
+    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="None")
     return {"message": "Logged out successfully"}

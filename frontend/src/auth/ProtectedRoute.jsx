@@ -5,7 +5,13 @@ export const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Loading...
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
