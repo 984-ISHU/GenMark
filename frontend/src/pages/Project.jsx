@@ -68,7 +68,6 @@ const Project = () => {
     }
   }, []);
 
-
   // Initialize user data
   useEffect(() => {
     if (contextUser) {
@@ -279,6 +278,36 @@ const Project = () => {
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleAutofillFromUrl = async () => {
+    if (!productUrl) {
+      alert("Please enter a valid product URL first.");
+      return;
+    }
+
+    try {
+      const res = await axios.get(
+        `https://genmark-mzoy.onrender.com/scrape-product`,
+        { params: { url: productUrl } }
+      );
+      const data = res.data;
+
+      setProductName(data.product_name || "");
+      setPrice(data.price || "");
+      setDescription(data.description || "");
+
+      if (data.image) {
+        const imgBlob = await fetch(data.image).then((r) => r.blob());
+        const file = new File([imgBlob], "product.jpg", { type: imgBlob.type });
+        setProductImages([file]);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(
+        "Could not fetch product details. The website might be blocking scraping."
+      );
     }
   };
 
