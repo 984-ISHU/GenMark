@@ -46,6 +46,23 @@ const Dashboard = () => {
   const [datasetFile, setDatasetFile] = useState(null);
   const [uploadingDataset, setUploadingDataset] = useState(false);
 
+  useEffect(() => {
+  const fetchUser = async () => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Error parsing stored user data:", error);
+      }
+    } else {
+      await fetchUserProfile();
+    }
+  };
+  fetchUser();
+}, []);
+
   // Update the useEffect dependency array to include the necessary dependencies
     useEffect(() => {
         if (contextUser) {
