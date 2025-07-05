@@ -232,5 +232,5 @@ async def change_password(payload: ChangePassword, request: Request, db: AsyncIO
 
 @router.post("/logout")
 async def logout_user(response: Response):
-    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="None")
+    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="Lax")
     return {"message": "Logged out successfully"}
