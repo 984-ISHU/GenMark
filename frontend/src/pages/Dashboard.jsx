@@ -46,92 +46,80 @@ const Dashboard = () => {
   const [datasetFile, setDatasetFile] = useState(null);
   const [uploadingDataset, setUploadingDataset] = useState(false);
 
+  // Initialize user data and fetch data
   useEffect(() => {
-  const fetchUser = async () => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const initializeUser = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing stored user data:", error);
-      }
-    } else {
-      await fetchUserProfile();
-    }
-  };
-  fetchUser();
-}, []);
-
-  // Update the useEffect dependency array to include the necessary dependencies
-    useEffect(() => {
+        // First try to get user from context
         if (contextUser) {
-          const userData = {
-            id: contextUser._id || contextUser.id || contextUser.user?._id || contextUser.user?.id,
-            username: contextUser.username || contextUser.user?.username || "",
-            email: contextUser.email || contextUser.user?.email || "",
-          };
-          setUser(userData);
+          console.log("Using context user:", contextUser);
+          setUser(contextUser);
           setLoading(false);
-        } else {
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            try {
-              const parsedUser = JSON.parse(storedUser);
-              setUser(parsedUser);
-              setLoading(false);
-            } catch (error) {
-              console.error("Error parsing stored user data:", error);
-              fetchUserProfile();
-            }
-          } else {
-            fetchUserProfile();
+          return;
+        }
+
+        // Then try localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            console.log("Using stored user:", parsedUser);
+            setUser(parsedUser);
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error("Error parsing stored user:", error);
+            localStorage.removeItem("user");
           }
         }
-      }, [contextUser]);
 
-    // Add immediate data fetching after user is set
-    useEffect(() => {
-      const fetchData = async () => {
-        if (user?.id) {
-          await Promise.all([fetchProjects(), fetchDatasets()]);
-        }
-      };
-      fetchData();
-    }, [user]);
+        // Finally, try to fetch from API
+        console.log("Fetching user profile from API");
+        const response = await getUserProfile();
+        console.log("Profile response:", response.data);
+        setUser(response.data);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        setLoading(false);
+        
+      } catch (error) {
+        console.error("Error initializing user:", error);
+        toast.error("Failed to load user profile");
+        navigate("/login");
+      }
+    };
 
-  // Fetch user profile from API
-  const fetchUserProfile = async () => {
-    try {
-      const response = await getUserProfile();
-      setUser(response.data);
-      localStorage.setItem("user", JSON.stringify(response.data));
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      toast.error("Failed to load user profile");
-      navigate("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+    initializeUser();
+  }, [contextUser, navigate]);
 
+  // Fetch projects and datasets when user is available
+  useEffect(() => {
+    const fetchData = async () => {
+      if (user?.id) {
+        console.log("Fetching data for user:", user.id);
+        await Promise.all([fetchProjects(), fetchDatasets()]);
+      }
+    };
+    
+    fetchData();
+  }, [user]);
 
   // Fetch user's projects
   const fetchProjects = async () => {
     if (!user?.id) {
-      console.warn("Missing user.id — skipping fetchProjects()");
+      console.warn("No user ID available for fetching projects");
       return;
     }
-    console.log("Inside Fetch Projects");
+
+    console.log("Fetching projects for user ID:", user.id);
     setProjectsLoading(true);
     try {
       const response = await getAllUserProjects(user.id);
-      const userProjects = response.data;
-      console.log("Current user:", user);
-      setProjects(userProjects);
+      console.log("Projects response:", response.data);
+      setProjects(response.data || []);
     } catch (error) {
       console.error("Error fetching projects:", error);
       toast.error("Failed to fetch projects");
+      setProjects([]);
     } finally {
       setProjectsLoading(false);
     }
@@ -140,26 +128,31 @@ const Dashboard = () => {
   // Fetch user's datasets
   const fetchDatasets = async () => {
     if (!user?.id) {
-      console.warn("Missing user.id — skipping fetcDatasets()");
+      console.warn("No user ID available for fetching datasets");
       return;
     }
 
+    console.log("Fetching datasets for user ID:", user.id);
     setDatasetsLoading(true);
     try {
       const response = await getUserDatasets(user.id);
-      console.log("User Datasets recieved");
-      const allDatasets = response.data;
-      const userDatasets = allDatasets.filter(
-        (dataset) =>
-          dataset.user_id === user.id ||
-          dataset.user_id === user.username ||
-          dataset.created_by === user.id ||
-          dataset.created_by === user.username
-      );
+      console.log("Datasets response:", response.data);
+      const allDatasets = response.data || [];
+      
+      // Filter datasets for current user
+      const userDatasets = allDatasets.filter(dataset => {
+        return dataset.user_id === user.id || 
+               dataset.user_id === user.username || 
+               dataset.created_by === user.id || 
+               dataset.created_by === user.username;
+      });
+      
+      console.log("Filtered user datasets:", userDatasets);
       setDatasets(userDatasets);
     } catch (error) {
       console.error("Error fetching datasets:", error);
       toast.error("Failed to fetch datasets");
+      setDatasets([]);
     } finally {
       setDatasetsLoading(false);
     }
@@ -200,7 +193,7 @@ const Dashboard = () => {
     try {
       await deleteProject(projectId);
       toast.success("Project deleted successfully");
-      fetchProjects();
+      await fetchProjects(); // Refresh projects list
     } catch (error) {
       console.error("Error deleting project:", error);
       toast.error("Failed to delete project");
@@ -233,7 +226,7 @@ const Dashboard = () => {
       );
       await uploadDataset(formData);
       toast.success("Dataset uploaded successfully!");
-      fetchDatasets();
+      await fetchDatasets(); // Refresh datasets list
       setShowNewDatasetModal(false);
       setNewDatasetName("");
       setDatasetFile(null);
@@ -258,7 +251,7 @@ const Dashboard = () => {
     try {
       await deleteDataset(datasetId);
       toast.success("Dataset deleted successfully");
-      fetchDatasets();
+      await fetchDatasets(); // Refresh datasets list
     } catch (error) {
       console.error("Error deleting dataset:", error);
       toast.error("Failed to delete dataset");

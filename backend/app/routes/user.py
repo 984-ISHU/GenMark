@@ -116,19 +116,20 @@ async def login_user(payload: LoginPayload, response: Response, db: AsyncIOMotor
         value=access_token, 
         httponly=True, 
         secure=True, 
-        samesite="None",  # ⬅ required for cross-origin cookie
+        samesite="Lax",
         max_age=10080
     )
 
+    # Return consistent user data structure
     return {
         "access_token": access_token,
         "user": {
-            "id": str(user["_id"]),
-            "username": user["username"]
+            "id": str(user["_id"]),  # Include user ID
+            "username": user["username"],
+            "email": user["email"],  # Include email for consistency
+            "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None
         }
     }
-
-
 
 @router.get("/userdetails/by-username")
 async def get_userdetails_by_username(username: str, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -159,7 +160,10 @@ async def get_profile(request: Request, db: AsyncIOMotorDatabase = Depends(get_d
     user = await db["Users"].find_one({"username": username})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return user data with ID included
     return {
+        "id": str(user["_id"]),  # Include user ID
         "username": user["username"], 
         "email": user["email"],
         "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None

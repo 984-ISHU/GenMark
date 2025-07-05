@@ -58,20 +58,31 @@ function Login() {
           email,
           password,
         });
+        
+        // After successful registration, automatically log in
+        if (response.status === 200) {
+          response = await loginUser({
+            identifier: username, // Use username as identifier
+            password,
+          });
+        }
       }
 
       // Handle successful authentication
       const userData = response.data;
+      console.log("Login response:", userData);
 
-      // Store token in localStorage if provided
-      if (userData.access_token) {
-        localStorage.setItem("access_token", userData.access_token);
-        
-        // Also set cookie if needed
-        document.cookie = `access_token=${userData.access_token}; path=/; secure; samesite=lax; max-age=86400`; // 24 hours
+      // Don't manually set cookies - let the backend handle httpOnly cookies
+      // Store user data in localStorage and context
+      if (userData.user) {
+        localStorage.setItem("user", JSON.stringify(userData.user));
+        login(userData.user);
+      } else {
+        // Fallback for registration response
+        localStorage.setItem("user", JSON.stringify(userData));
+        login(userData);
       }
 
-      login(userData);
       navigate(redirect, { replace: true });
 
     } catch (err) {
