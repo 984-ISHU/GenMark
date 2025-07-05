@@ -288,9 +288,10 @@ const Project = () => {
     }
 
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/scrape-product`, {
-        params: { url: productUrl },
-      });
+      const res = await axios.get(
+        `https://genmark-mzoy.onrender.com/scrape-product`,
+        { params: { url: productUrl } }
+      );
       const data = res.data;
 
       setProductName(data.product_name || "");
@@ -450,12 +451,6 @@ const Project = () => {
                 className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 onChange={(e) => setProductUrl(e.target.value)}
               />
-              <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl"
-                onClick={handleAutofillFromUrl}
-              >
-                Autofill from URL
-              </Button>
             </div>
 
             {/* Description */}
