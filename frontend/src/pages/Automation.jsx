@@ -218,7 +218,7 @@ const Automation = () => {
       </div>
 
       {/* Email Preview Section */}
-      <div className="mb-12 px-10">
+      <div className="mb-12 px-10 scale-75">
         <div className="relative flex items-center justify-center">
           <Button
             onClick={handlePreviousTemplate}
