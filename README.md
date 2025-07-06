@@ -239,7 +239,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📬 Contact
 
 Created by Karan and Ishaan  
-Email: [karanjadhav2003@gmail.com](mailto:karanjadhav2003@gmail.com), [ishux984@example.com](mailto:ishux984@example.com)  
-LinkedIn: [karanjadhav2003](https://www.linkedin.com/in/karanjadhav2003/), [ishu-garg](https://linkedin.com/in/ishu-garg)
+Email: [karanjadhav2003@gmail.com](mailto:karanjadhav2003@gmail.com), [ishux984@example.com](mailto:ishux984@gmail.com)  
+LinkedIn: [karanjadhav2003](https://www.linkedin.com/in/karanjadhav2003/), [ishu-garg](https://www.linkedin.com/in/ishaanmc/)
 
 ---
