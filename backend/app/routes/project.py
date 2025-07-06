@@ -261,6 +261,20 @@ async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDa
 
     return convert_object_ids(project)
 
+@router.get("/products/{user_id}/{project_id}/")
+async def get_specific_product(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    print("User ID:", user_id)
+    print("Project ID:", project_id)
+
+    project = await db["Products"].find_one({
+        "project_id": ObjectId(project_id)
+    })
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Product not Found")
+
+    return convert_object_ids(project)
+
 
 
 @router.put("/update/generated-output/{project_id}")
