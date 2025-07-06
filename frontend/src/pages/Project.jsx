@@ -290,7 +290,9 @@ const Project = () => {
     try {
       const res = await axios.get(
         `https://genmark-mzoy.onrender.com/scrape-product`,
-        { params: { url: productUrl } }
+        {
+          params: { url: productUrl },
+        }
       );
       const data = res.data;
 
@@ -346,7 +348,7 @@ const Project = () => {
 
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans p-6 overflow-hidden">
-      {/* Header */}      
+      {/* Header */}
       <div className="fixed top-0 inset-x-0 bg-black/20 backdrop-blur-lg border-b border-white/10 z-50 overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -359,16 +361,16 @@ const Project = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-          <button
-            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
-            onClick={() => {
-              localStorage.removeItem("ProjectName");
-              navigate("/dashboard");
-            }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
+              <button
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
+                onClick={() => {
+                  localStorage.removeItem("ProjectName");
+                  navigate("/dashboard");
+                }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </button>
             </div>
           </div>
         </div>
@@ -376,7 +378,7 @@ const Project = () => {
 
       <div className="grid grid-cols-3 gap-6 scale-75">
         {/* Product Details Card */}
-        <Card className="bg-white/80 backdrop-blur-lg border border-purple-200 shadow-2xl hover:shadow-purple-300 transition-shadow duration-300 rounded-2xl p-6">
+        <Card className="bg-[rgb(216,205,255)] backdrop-blur-lg border border-purple-200 shadow-2xl hover:shadow-purple-300 transition-shadow duration-300 rounded-2xl p-6">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-purple-700 flex items-center justify-center gap-2">
               <span className="w-9 h-9 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-lg">
@@ -495,7 +497,7 @@ const Project = () => {
         </Card>
 
         {/* Target Audience Card */}
-        <Card className="bg-white/70 backdrop-blur-sm border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-6 space-y-6">
+        <Card className="bg-[rgb(216,205,255)] backdrop-blur-sm border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-6 space-y-6">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-purple-600">
               🎯 Target Audience
@@ -520,7 +522,7 @@ const Project = () => {
                   onValueChange={(value) => setSelectedDataset(value)}
                   value={selectedDataset}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-white/90">
                     <SelectValue placeholder="Select a dataset" />
                   </SelectTrigger>
                   <SelectContent>
@@ -575,7 +577,7 @@ const Project = () => {
                 onValueChange={setCategory}
                 value={category}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-white/90">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -598,7 +600,7 @@ const Project = () => {
                 onValueChange={setLocation}
                 value={location}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-white/90">
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
@@ -647,65 +649,59 @@ const Project = () => {
         </Card>
 
         {/* Output Format Card */}
-        <Card className="bg-white/80 backdrop-blur-md border border-indigo-200 shadow-xl hover:shadow-indigo-300 transition-all duration-300 rounded-2xl text-sm sm:text-base">
-  <CardHeader className="text-center pb-4">
-    <CardTitle className="text-2xl font-bold text-indigo-700 flex items-center justify-center gap-3">
-      <span className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg">
-        🎨
-      </span>
-      Output Format
-    </CardTitle>
-  </CardHeader>
+        <Card className="bg-[rgb(216,205,255)] backdrop-blur-md border border-indigo-200 shadow-xl hover:shadow-indigo-300 transition-all duration-300 rounded-2xl text-sm sm:text-base">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-2xl font-bold text-indigo-700 flex items-center justify-center gap-3">
+              <span className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg">
+                🎨
+              </span>
+              Output Format
+            </CardTitle>
+          </CardHeader>
 
-  <CardContent className="px-6 pb-6">
-    <div className="space-y-2">
-      <label
-        htmlFor="output-description"
-        className="block text-l font-medium text-gray-700"
-      >
-        💭 Describe your custom output format *
-      </label>
-      <Textarea
-        id="output-description"
-        className="w-full bg-white/90 text-xl text-gray-800 p-4 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 transition-all duration-200 shadow-sm placeholder-gray-400"
-        placeholder="e.g., 'A catchy social media post with emojis, compelling headline, and call-to-action for Instagram targeting young professionals aged 25-35.'"
-        rows={6}
-        value={customOutputDescription}
-        onChange={(e) => setCustomOutputDescription(e.target.value)}
-      />
-      <p className="text-l text-gray-500">
-        Tip: Be specific about tone, format, platform, style, and target
-        audience preferences.
-      </p>
-    </div>
-  </CardContent>
+          <CardContent className="px-6 pb-6">
+            <div className="space-y-2">
+              <label
+                htmlFor="output-description"
+                className="block text-l font-medium text-gray-700"
+              >
+                💭 Describe your custom output format *
+              </label>
+              <Textarea
+                id="output-description"
+                className="w-full bg-white/90 text-xl text-gray-800 p-4 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 transition-all duration-200 shadow-sm placeholder-gray-400"
+                placeholder="e.g., 'A catchy social media post with emojis, compelling headline, and call-to-action for Instagram targeting young professionals aged 25-35.'"
+                rows={6}
+                value={customOutputDescription}
+                onChange={(e) => setCustomOutputDescription(e.target.value)}
+              />
+              <p className="text-l text-gray-500">
+                Tip: Be specific about tone, format, platform, style, and target
+                audience preferences.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="mt-8 flex flex-col items-center justify-center space-y-4">
+        <Button
+          onClick={handleGenerate}
+          disabled={creating}
+          className="w-full max-w-md text-white py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all duration-200 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+        >
+          {creating ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Creating Project...
+            </>
+          ) : (
+            <>🚀 Generate Marketing Content</>
+          )}
+        </Button>
 
-  <CardContent className="px-6 pb-6 space-y-4">
-    <div className="pt-4">
-      <Button
-        onClick={handleGenerate}
-        disabled={creating}
-        className="w-full text-white py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all duration-200 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-      >
-        {creating ? (
-          <>
-            <Loader2 className="w-6 h-6 animate-spin" />
-            Creating Project...
-          </>
-        ) : (
-          <>🚀 Generate Marketing Content</>
-        )}
-      </Button>
-    </div>
-
-    <div className="mt-6 text-center">
-      <p className="text-sm text-gray-600">
-        * Required fields must be filled before generating content
-      </p>
-    </div>
-  </CardContent>
-</Card>
-
+        <p className="text-sm text-white/50 text-center">
+          * Required fields must be filled before generating content
+        </p>
       </div>
     </div>
   );

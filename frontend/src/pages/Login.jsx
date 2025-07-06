@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
@@ -30,7 +31,6 @@ function Login() {
   // Get redirect path from URL or default to dashboard
   const searchParams = new URLSearchParams(location.search);
   const redirect = searchParams.get("redirect") || "/dashboard";
-
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -39,54 +39,52 @@ function Login() {
     try {
       let response;
 
-      if (isLogin) {
-        // Login using API function
-        response = await loginUser({
-          identifier,
-          password,
-        });
-      } else {
-        // Register using API function
-        console.log("Sending register request with:", {
-          username,
-          email,
-          password,
-        });
+      // Validate registration inputs
+      if (!isLogin) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          toast.error("Please enter a valid email address.");
+          setLoading(false);
+          return;
+        }
 
-        response = await registerUser({
-          username,
-          email,
-          password,
-        });
-        
-        // After successful registration, automatically log in
-        if (response.status === 200) {
-          response = await loginUser({
-            identifier: username, // Use username as identifier
-            password,
-          });
+        const passwordErrors = [];
+        if (password.length < 8) passwordErrors.push("at least 8 characters");
+        if (!/[A-Z]/.test(password)) passwordErrors.push("an uppercase letter");
+        if (!/[a-z]/.test(password)) passwordErrors.push("a lowercase letter");
+        if (!/\d/.test(password)) passwordErrors.push("a number");
+        if (!/[\W_]/.test(password)) passwordErrors.push("a special character");
+
+        if (passwordErrors.length > 0) {
+          toast.error(`Password must include ${passwordErrors.join(", ")}`);
+          setLoading(false);
+          return;
         }
       }
 
-      // Handle successful authentication
-      const userData = response.data;
-      console.log("Login response:", userData);
+      if (isLogin) {
+        response = await loginUser({ identifier, password });
+      } else {
+        response = await registerUser({ username, email, password });
 
-      // Don't manually set cookies - let the backend handle httpOnly cookies
-      // Store user data in localStorage and context
+        if (response.status === 200) {
+          response = await loginUser({ identifier: username, password });
+        }
+      }
+
+      const userData = response.data;
       if (userData.user) {
         login(userData.user);
       } else {
-        // Fallback for registration response
         localStorage.setItem("user", JSON.stringify(userData));
         login(userData);
       }
 
       navigate(redirect, { replace: true });
-
     } catch (err) {
       console.error("Authentication error:", err.response?.data);
       setError(err.response?.data?.detail || "Something went wrong.");
+      toast.error(err.response?.data?.detail || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -212,6 +210,22 @@ function Login() {
                   )}
                 </button>
               </div>
+              {/* Password strength feedback */}
+              {!isLogin && password && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {password.length < 8
+                    ? "Password too short"
+                    : !/[A-Z]/.test(password)
+                    ? "Include at least one uppercase letter"
+                    : !/[a-z]/.test(password)
+                    ? "Include at least one lowercase letter"
+                    : !/\d/.test(password)
+                    ? "Include at least one number"
+                    : !/[\W_]/.test(password)
+                    ? "Include at least one special character"
+                    : "✅ Strong password"}
+                </p>
+              )}
             </div>
 
             {/* Submit button */}
