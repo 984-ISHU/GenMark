@@ -6,15 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui";
-import {
-  Menu,
-  X,
-  Github,
-  Linkedin,
-  BriefcaseBusiness,
-  Code,
-  Users,
-} from "lucide-react";
+import { Menu, X, Github, Linkedin, BriefcaseBusiness } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
