@@ -290,53 +290,60 @@ const Home = () => {
       </section>
 
       {/* Live Preview / Demos */}
-      <section
-        id="preview"
-        className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-slate-800 to-purple-900"
-      >
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
-            <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-              🎥 Live Preview
-            </span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Email + Image Campaign",
-                description: "AI-generated email content with stunning visuals",
-              },
-              {
-                title: "Social Media Post",
-                description: "Engaging posts optimized for each platform",
-              },
-              {
-                title: "Video Marketing",
-                description: "Dynamic video content that captures attention",
-              },
-            ].map((demo, idx) => (
-              <div key={idx} className="group cursor-pointer">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:transform hover:scale-105 overflow-hidden">
-                  <div className="h-64 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center relative">
-                    <div className="text-6xl text-white/60 group-hover:text-white/80 transition-all duration-300">
-                      {idx === 0 && "📧"}
-                      {idx === 1 && "📱"}
-                      {idx === 2 && "🎬"}
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {demo.title}
-                    </h3>
-                    <p className="text-white/70">{demo.description}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+<section
+  id="preview"
+  className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-slate-800 to-purple-900"
+>
+  <div className="max-w-7xl mx-auto">
+    <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
+      <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+        🎥 Live Preview
+      </span>
+    </h2>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {[
+        {
+          title: "Email + Image Campaign",
+          description: "AI-generated email content with stunning visuals",
+          videoSrc: "/videos/email-campaign.mp4",
+        },
+        {
+          title: "AI-Powered Content Editing",
+          description: "Refine your copy with intelligent suggestions and on-brand tone",
+          videoSrc: "/videos/editing-demo.mp4",
+        },
+        {
+          title: "Video Marketing",
+          description: "Dynamic video content that captures attention",
+          videoSrc: "/videos/marketing-video.mp4",
+        },
+      ].map((demo, idx) => (
+        <div key={idx} className="group cursor-pointer">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden">
+            <div className="h-64 relative overflow-hidden">
+              <video
+                src={demo.videoSrc}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                loop
+                autoPlay
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-white mb-2">
+                {demo.title}
+              </h3>
+              <p className="text-white/70">{demo.description}</p>
+            </div>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
+
 
       {/* Creators Section */}
       <section

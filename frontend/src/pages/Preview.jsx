@@ -53,10 +53,10 @@ const GeneratingLoader = () => (
           📝 <span className="font-medium">Text:</span> ~5 seconds
         </li>
         <li>
-          🖼️ <span className="font-medium">Image:</span> ~15 seconds
+          🖼️ <span className="font-medium">Image:</span> ~10 seconds
         </li>
         <li>
-          🎬 <span className="font-medium">Video:</span> ~30 seconds
+          🎬 <span className="font-medium">Video:</span> ~90 seconds
         </li>
       </ul>
     </div>
