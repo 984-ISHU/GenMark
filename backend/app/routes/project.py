@@ -11,7 +11,7 @@ import pandas as pd
 from GenAI.Langgraph import run_langgraph_for_project
 import io
 
-router = APIRouter(prefix="/api/project", tags = ["Projects"])
+router = APIRouter(prefix="/api/project/", tags = ["Projects"])
 
 async def upsert_generated_output(db, project_id, update_fields):
     collection = db["GeneratedOutput"]
@@ -261,6 +261,19 @@ async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDa
 
     return convert_object_ids(project)
 
+@router.get("/products/{user_id}/{project_id}/")
+async def get_specific_product(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    print("User ID:", user_id)
+    print("Project ID:", project_id)
+    project = await db["Products"].find_one({
+        "user_id": ObjectId(user_id),
+        "_id": ObjectId(project_id)
+    })
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not Found")
+
+    return convert_object_ids(project)
 
 
 @router.put("/update/generated-output/{project_id}")
