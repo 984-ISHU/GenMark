@@ -2,21 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   @apply w-full min-h-screen overflow-x-hidden;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 body {
-  scrollbar-width: none;        /* Firefox */
-  -ms-overflow-style: none;     /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 body::-webkit-scrollbar {
-  display: none;                /* Chrome, Safari */
+  display: none; /* Chrome, Safari */
 }
 
 :root {
@@ -169,5 +172,17 @@ button:focus-visible {
 
 /* Firefox */
 .no-spinner {
+  -moz-appearance: textfield;
+}
+
+/* Remove number input spinners in Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove number input spinners in Firefox */
+input[type="number"] {
   -moz-appearance: textfield;
 }
