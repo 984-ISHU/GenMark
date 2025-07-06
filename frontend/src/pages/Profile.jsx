@@ -327,7 +327,7 @@ const Profile = () => {
                   type="text"
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-white rounded-xl border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  className="w-full px-4 py-3 bg-white rounded-xl border text-purple-800 border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                   placeholder="Enter new username"
                   disabled={usernameLoading}
                 />
