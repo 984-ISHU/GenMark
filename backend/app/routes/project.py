@@ -11,7 +11,7 @@ import pandas as pd
 from GenAI.Langgraph import run_langgraph_for_project
 import io
 
-router = APIRouter(prefix="/api/project/", tags = ["Projects"])
+router = APIRouter(prefix="/api/project", tags = ["Projects"])
 
 async def upsert_generated_output(db, project_id, update_fields):
     collection = db["GeneratedOutput"]
