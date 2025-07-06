@@ -303,7 +303,7 @@ async def upload_dataset(
 
     categories = df["Category"].dropna().unique().tolist() if "Category" in df.columns else []
     locations = df["Location"].dropna().unique().tolist() if "Category" in df.columns else []
-
+    
     categories = sorted(categories)
     locations = sorted(locations)
     

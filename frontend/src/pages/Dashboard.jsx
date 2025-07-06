@@ -46,6 +46,12 @@ const Dashboard = () => {
   const [datasetFile, setDatasetFile] = useState(null);
   const [uploadingDataset, setUploadingDataset] = useState(false);
 
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (str) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   // Initialize user data and fetch data
   useEffect(() => {
     const initializeUser = async () => {
@@ -180,6 +186,13 @@ const Dashboard = () => {
     }
   };
 
+  // Handle Enter key press for project creation
+  const handleProjectKeyPress = (e) => {
+    if (e.key === 'Enter' && !creatingProject && newProjectName.trim()) {
+      handleCreateProject();
+    }
+  };
+
   // Delete project
   const handleDeleteProject = async (projectId) => {
     if (
@@ -235,6 +248,13 @@ const Dashboard = () => {
       toast.error("Failed to upload dataset");
     } finally {
       setUploadingDataset(false);
+    }
+  };
+
+  // Handle Enter key press for dataset creation
+  const handleDatasetKeyPress = (e) => {
+    if (e.key === 'Enter' && !uploadingDataset && newDatasetName.trim() && datasetFile) {
+      handleUploadDataset();
     }
   };
 
@@ -311,7 +331,7 @@ const Dashboard = () => {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-purple-700">
-                Welcome back, {user?.username || user?.name || "User"}! 👋
+                Welcome back, {capitalizeFirstLetter(user?.username || user?.name || "User")}! 👋
               </h2>
               <p className="text-gray-600 mt-1">
                 Ready to create amazing marketing content?
@@ -527,6 +547,7 @@ const Dashboard = () => {
                   type="text"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyPress={handleProjectKeyPress}
                   placeholder="Enter project name..."
                   className="w-full px-4 py-3 border border-gray-300 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   disabled={creatingProject}
@@ -552,7 +573,7 @@ const Dashboard = () => {
                     setNewProjectName("");
                   }}
                   disabled={creatingProject}
-                  className="px-6 py-3 border border-gray-300 text-gray-300 rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 border border-gray-300 text-gray-400 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -591,6 +612,7 @@ const Dashboard = () => {
                   type="text"
                   value={newDatasetName}
                   onChange={(e) => setNewDatasetName(e.target.value)}
+                  onKeyPress={handleDatasetKeyPress}
                   placeholder="Enter dataset name..."
                   className="w-full px-4 py-3 border border-gray-300 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   disabled={uploadingDataset}
@@ -637,7 +659,7 @@ const Dashboard = () => {
                     setDatasetFile(null);
                   }}
                   disabled={uploadingDataset}
-                  className="px-6 py-3 border border-gray-300 text-gray-300 rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 border border-gray-300 text-gray-400 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

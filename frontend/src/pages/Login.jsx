@@ -143,7 +143,7 @@ function Login() {
                   <input
                     type="text"
                     placeholder="Choose a username"
-                    className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                    className="w-full p-4 bg-white/80 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required={!isLogin}
@@ -158,7 +158,7 @@ function Login() {
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                    className="w-full p-4 bg-white/80 border border-gray-200  text-gray-900  rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required={!isLogin}
@@ -177,7 +177,7 @@ function Login() {
                 <input
                   type="text"
                   placeholder="Enter username or email"
-                  className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                  className="w-full p-4 bg-white/80 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   required={isLogin}
@@ -195,7 +195,7 @@ function Login() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="w-full p-4 pr-12 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
+                  className="w-full p-4 pr-12 bg-white/80 border border-gray-200  text-gray-900 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-500"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

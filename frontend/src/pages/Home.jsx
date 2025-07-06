@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Github, Linkedin, Code, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -27,7 +27,7 @@ const Home = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'how-it-works', 'features', 'preview', 'testimonials'];
+      const sections = ['home', 'how-it-works', 'features', 'preview', 'creators'];
       const currentSection = sections.find(section => {
         const element = document.getElementById(section);
         if (element) {
@@ -50,13 +50,13 @@ const Home = () => {
     { id: 'how-it-works', label: 'How It Works' },
     { id: 'features', label: 'Features' },
     { id: 'preview', label: 'Preview' },
-    { id: 'testimonials', label: 'Testimonials' }
+    { id: 'creators', label: 'Creators' }
   ];
 
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans text-white overflow-x-hidden">
       {/* Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 bg-black/20 backdrop-blur-lg border-b border-white/10 z-50">
+      <nav className="fixed top-0 inset-x-0 bg-black/20 backdrop-blur-lg border-b border-white/10 z-50 overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -123,29 +123,35 @@ const Home = () => {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-4 md:px-6 pt-20">
-        <div className="max-w-6xl mx-auto">
+      <section id="home" className="min-h-screen flex flex-col justify-center px-4 md:px-6 pt-20">
+        <div className="max-w-6xl mx-auto w-full">
           <div className="mb-8">
-            <h1 className="text-6xl md:text-7xl font-extrabold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 text-left leading-tight">
+              Your next breakthrough campaign begins right here.
+            </h1>
+            <h2 className="text-3xl md:text-6xl font-extrabold mb-4 text-left">
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
                 GenMark
               </span>
-            </h1>
-            <h2 className="text-2xl md:text-3xl font-bold text-white/90 mb-4">
-              Personalized Marketing Studio
             </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto mb-8 leading-relaxed">
+            <h3 className="text-2xl md:text-3xl font-bold text-white/90 mb-4 text-left">
+              🎯Personalized Marketing Studio
+            </h3>
+            <p className="text-xl text-white/70 max-w-3xl mb-8 leading-relaxed text-left">
               Unleash AI-driven campaigns tailored for every audience — effortlessly create emails, social posts, videos, and more with cutting-edge AI models.
             </p>
           </div>
-          <Button 
-            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-full shadow-2xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 text-lg font-semibold"
-            onClick={handleGetStarted}
-          >
-            🚀 Start Creating Now
-          </Button>
+          <div className="flex justify-start md:justify-start">
+            <Button
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-full shadow-2xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 text-lg font-semibold"
+              onClick={handleGetStarted}
+            >
+              🚀 Start Creating Now
+            </Button>
+          </div>
         </div>
       </section>
+
 
       {/* How it Works */}
       <section id="how-it-works" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-slate-800 to-purple-900">
@@ -155,24 +161,30 @@ const Home = () => {
               ✨ How It Works
             </span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               {
                 step: "01",
-                title: "Choose Product",
-                description: "Pick from existing products or add your own with detailed descriptions and compelling images."
+                title: "Upload Customer Data",
+                description: "Import your customer dataset to identify and segment your target audience effectively."
               },
               {
-                step: "02", 
-                title: "Select Output",
-                description: "Decide the output format — email campaigns, social posts, images, or videos, customized for your target audience."
+                step: "02",
+                title: "Set Campaign Goals",
+                description: "Select your target audience, product to promote, and preferred output formats like email, images, or videos."
               },
               {
                 step: "03",
-                title: "Generate & Share", 
-                description: "Let GenMark generate high-quality marketing content powered by AI, ready to deploy across all channels."
+                title: "Generate Content",
+                description: "AI agents create personalized marketing content in multiple formats — text, images, and video — tailored to your audience."
+              },
+              {
+                step: "04",
+                title: "Edit, Export & Automate",
+                description: "Easily edit generated content, export it in your desired format, or automate mail campaigns directly from the dashboard."
               }
-            ].map((step, idx) => (
+            ]
+            .map((step, idx) => (
               <Card key={idx} className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:transform hover:scale-105">
                 <CardHeader className="text-center pb-4">
                   <div className="text-4xl font-bold text-purple-400 mb-4">{step.step}</div>
@@ -271,42 +283,59 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-purple-900 to-slate-800">
+      {/* Creators Section */}
+      <section id="creators" className="min-h-screen flex flex-col justify-center py-20 px-4 md:px-6 bg-gradient-to-br from-purple-900 to-slate-800">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              💬 What Our Users Say
+              👥 Meet The Creators
             </span>
           </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               { 
-                name: "Alex Rodriguez", 
-                role: "Marketing Director",
-                quote: "GenMark completely transformed how we create campaigns. The AI generates content that's not just fast, but genuinely creative and stunning. Our conversion rates have doubled.",
-                rating: 5
+                name: "Ishaan",
+                role: "Co-Creator",
+                description: "Passionate about AI and creating tools that empower marketers to achieve extraordinary results.",
+                github: "https://github.com/984-ISHU/", 
+                linkedin: "https://linkedin.com/in/ishaanmc", 
+                avatar: "👨‍💻"
               },
               { 
-                name: "Priya Sharma", 
-                role: "Social Media Manager",
-                quote: "The flexibility and variety of AI models available is incredible. Our social media engagement has skyrocketed, and we're creating content we never thought possible before.",
-                rating: 5
+                name: "Karan",
+                role: "Co-Creator",
+                description: "Specializes in machine learning and building scalable AI solutions that transform how businesses operate.",
+                github: "https://github.com/sladereaperr", 
+                linkedin: "https://www.linkedin.com/in/karanjadhav2003/",
+                avatar: "👨‍💻"
               },
-            ].map((testimonial, idx) => (
-              <Card key={idx} className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <span key={i} className="text-yellow-400 text-xl">⭐</span>
-                    ))}
-                  </div>
-                  <p className="text-white/90 text-lg italic mb-6 leading-relaxed">
-                    "{testimonial.quote}"
+            ].map((creator, idx) => (
+              <Card key={idx} className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:transform hover:scale-105">
+                <CardContent className="p-8 text-center">
+                  <div className="text-6xl mb-6">{creator.avatar}</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{creator.name}</h3>
+                  <p className="text-purple-400 font-semibold mb-4">{creator.role}</p>
+                  <p className="text-white/80 text-lg leading-relaxed mb-6">
+                    {creator.description}
                   </p>
-                  <div className="text-right">
-                    <p className="font-bold text-white text-lg">{testimonial.name}</p>
-                    <p className="text-white/70">{testimonial.role}</p>
+                  <div className="flex justify-center space-x-4">
+                    <a 
+                      href={creator.github} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all duration-300 group"
+                    >
+                      <Github className="w-6 h-6 text-white/70 group-hover:text-white transition-colors" />
+                    </a>
+                    <a 
+                      href={creator.linkedin} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all duration-300 group"
+                    >
+                      <Linkedin className="w-6 h-6 text-white/70 group-hover:text-white transition-colors" />
+                    </a>
                   </div>
                 </CardContent>
               </Card>
@@ -317,8 +346,8 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="py-8 text-center text-white/60 text-sm border-t border-white/10 bg-black/20 backdrop-blur-lg">
-                  <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <p>© 2025 GenMark. All rights reserved. | Powered by AI • Built for Marketers</p>
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <p>© 2025 GenMark. All rights reserved.</p>
         </div>
       </footer>
     </div>
