@@ -246,7 +246,7 @@ const Home = () => {
               {
                 title: "AI-Powered",
                 description:
-                  "Harness cutting-edge models like GPT-4, Stable Diffusion, Sora, and more for unprecedented creative output.",
+                  "Harness cutting-edge models like Gemini, Groq, Predis APIs and more for unprecedented creative output.",
                 icon: "🤖",
               },
               {

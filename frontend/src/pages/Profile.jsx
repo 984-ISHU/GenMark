@@ -415,7 +415,7 @@ const Profile = () => {
                         currentPassword: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    className="w-full px-4 py-3 pr-12 bg-white text-purple-700 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                   />
                   <button
@@ -447,7 +447,7 @@ const Profile = () => {
                         newPassword: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    className="w-full px-4 py-3 pr-12 bg-white text-purple-700 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                     minLength={6}
                   />
@@ -480,7 +480,7 @@ const Profile = () => {
                         confirmPassword: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 pr-12 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    className="w-full px-4 py-3 pr-12 bg-white text-purple-700 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     required
                     minLength={6}
                   />

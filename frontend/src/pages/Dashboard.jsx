@@ -399,15 +399,6 @@ const Dashboard = () => {
                                   ).toLocaleDateString()
                                 : "N/A"}
                             </span>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                project.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {project.status || "in_progress"}
-                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
