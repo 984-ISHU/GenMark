@@ -1,7 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mail, ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import {
   getSpecificProject,
@@ -20,11 +27,13 @@ const Toast = ({ message, type, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-  const Icon = type === 'success' ? CheckCircle : XCircle;
+  const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
+  const Icon = type === "success" ? CheckCircle : XCircle;
 
   return (
-    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-in slide-in-from-right`}>
+    <div
+      className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-in slide-in-from-right`}
+    >
       <Icon className="w-5 h-5" />
       <span>{message}</span>
       <button onClick={onClose} className="ml-2 text-white hover:text-gray-200">
@@ -147,9 +156,8 @@ const emailTemplates = [
         </div>
       </div>
     `,
-  }
+  },
 ];
-
 
 const Automation = () => {
   const location = useLocation();
@@ -174,13 +182,14 @@ const Automation = () => {
   // Helper function to capitalize names
   const capitalizeName = (name) => {
     if (!name) return "there";
-    return name.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   // Toast helper functions
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
 
@@ -196,11 +205,13 @@ const Automation = () => {
 
     const fetchProductURL = async () => {
       try {
-        const response = await fetch(`https://genmark-mzoy.onrender.com/api/project/products/${state.user_id}/${state.project_id}`);
+        const response = await fetch(
+          `https://genmark-mzoy.onrender.com/api/project/products/${state.user_id}/${state.project_id}`
+        );
         if (response.ok) {
           const productData = await response.json();
           console.log("Product API response:", productData);
-          console.log("Product URL: ", productData.product_url)
+          console.log("Product URL: ", productData.product_url);
           setProductURL(productData.product_url || "");
         } else {
           console.warn("Failed to fetch product URL");
@@ -317,13 +328,16 @@ const Automation = () => {
       }
 
       if (successCount === totalCount) {
-        showToast(`Successfully sent ${successCount} emails!`, 'success');
+        showToast(`Successfully sent ${successCount} emails!`, "success");
       } else {
-        showToast(`Sent ${successCount} out of ${totalCount} emails`, 'success');
+        showToast(
+          `Sent ${successCount} out of ${totalCount} emails`,
+          "success"
+        );
       }
     } catch (error) {
       console.error("Email sending error:", error);
-      showToast("Failed to send emails", 'error');
+      showToast("Failed to send emails", "error");
     } finally {
       setIsSending(false);
     }
@@ -358,10 +372,10 @@ const Automation = () => {
         }
       );
       if (!response.ok) throw new Error("Failed to save updates");
-      showToast("Dataset saved successfully!", 'success');
+      showToast("Dataset saved successfully!", "success");
     } catch (err) {
       console.error(err);
-      showToast("Failed to save dataset", 'error');
+      showToast("Failed to save dataset", "error");
     }
   };
 
@@ -374,11 +388,7 @@ const Automation = () => {
     <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans">
       {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={hideToast}
-        />
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
 
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 mb-10">
@@ -388,7 +398,9 @@ const Automation = () => {
               <h1 className="text-4xl font-extrabold text-white tracking-tight">
                 GenMark
               </h1>
-              <p className="text-purple-400 font-medium mt-2">Project: {projectName}</p>
+              <p className="text-purple-400 font-medium mt-2">
+                Project: {projectName}
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div
@@ -416,12 +428,9 @@ const Automation = () => {
       <div className="px-6 lg:px-10 mb-10">
         <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-6 shadow-md border border-white/20 text-center">
           <h2 className="text-3xl font-semibold text-white">
-            🎉 Hey {capitalizeName(name || "User")}, here's your
-            generated content for{" "}
-            <span className="text-purple-300 font-bold">
-              {projectName}
-            </span>
-            !
+            🎉 Hey {capitalizeName(name || "User")}, here's your generated
+            content for{" "}
+            <span className="text-purple-300 font-bold">{projectName}</span>!
           </h2>
           <p className="text-purple-100 mt-2 text-sm">
             Review and customize your AI-generated assets below.
@@ -519,7 +528,11 @@ const Automation = () => {
                   Email Recipients
                 </h3>
                 <p className="text-purple-100 text-sm mt-1">
-                  * you can replace these names & mails with others for testing
+                  * You can replace these names & mails with others for testing
+                </p>
+                <p className="text-purple-100 text-sm mt-1">
+                  * Please save your changes before sending the email to ensure
+                  it is sent to the updated address
                 </p>
               </div>
               <Button
@@ -532,63 +545,63 @@ const Automation = () => {
 
             {/* Recipients List */}
             <div className="p-6">
-  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-    {datasetHead.map((user, index) => (
-      <div
-        key={index}
-        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* User ID */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              User ID
-            </label>
-            <div className="text-sm font-mono text-gray-800 bg-gray-50 px-3 py-2 rounded">
-              {user.user_id || `User ${index + 1}`}
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                {datasetHead.map((user, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* User ID */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                          User ID
+                        </label>
+                        <div className="text-sm font-mono text-gray-800 bg-gray-50 px-3 py-2 rounded">
+                          {user.user_id || `User ${index + 1}`}
+                        </div>
+                      </div>
+
+                      {/* Name */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          value={user.Name || ""}
+                          onChange={(e) => {
+                            const updated = [...datasetHead];
+                            updated[index].Name = e.target.value;
+                            setDatasetHead(updated);
+                          }}
+                          className="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Enter name"
+                        />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          value={user.Email || ""}
+                          onChange={(e) => {
+                            const updated = [...datasetHead];
+                            updated[index].Email = e.target.value;
+                            setDatasetHead(updated);
+                          }}
+                          className="w-full text-sm font-mono px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              value={user.Name || ""}
-              onChange={(e) => {
-                const updated = [...datasetHead];
-                updated[index].Name = e.target.value;
-                setDatasetHead(updated);
-              }}
-              className="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter name"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={user.Email || ""}
-              onChange={(e) => {
-                const updated = [...datasetHead];
-                updated[index].Email = e.target.value;
-                setDatasetHead(updated);
-              }}
-              className="w-full text-sm font-mono px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter email address"
-            />
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
           </div>
         </div>
       )}
