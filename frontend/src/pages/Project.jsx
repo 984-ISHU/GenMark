@@ -288,9 +288,12 @@ const Project = () => {
     }
 
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/scrape-product`, {
-        params: { url: productUrl },
-      });
+      const res = await axios.get(
+        `https://genmark-mzoy.onrender.com/scrape-product`,
+        {
+          params: { url: productUrl },
+        }
+      );
       const data = res.data;
 
       setProductName(data.product_name || "");
