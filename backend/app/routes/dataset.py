@@ -301,9 +301,12 @@ async def upload_dataset(
     content = await file.read()
     df = pd.read_csv(io.StringIO(content.decode('utf-8')))
 
-    categories = df["Category"].dropna().unique().tolist().sort() if "Category" in df.columns else []
-    locations = df["Location"].dropna().unique().tolist().sort() if "Category" in df.columns else []
+    categories = df["Category"].dropna().unique().tolist() if "Category" in df.columns else []
+    locations = df["Location"].dropna().unique().tolist() if "Category" in df.columns else []
 
+    categories = sorted(categories)
+    locations = sorted(locations)
+    
     # Store file in GridFS (async)
     await file.seek(0)
     grid_out = await grid_fs.upload_from_stream(

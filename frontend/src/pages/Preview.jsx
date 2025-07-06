@@ -30,13 +30,20 @@ const GeneratingLoader = () => (
         🎨 Generating Your Content...
       </h3>
       <p className="text-gray-600 max-w-md">
-        Our AI is crafting your marketing materials. This may take a few moments.
+        Our AI is crafting your marketing materials. This may take a few
+        moments.
       </p>
     </div>
     <div className="flex space-x-1">
       <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-      <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-      <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div
+        className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+        style={{ animationDelay: "0.1s" }}
+      ></div>
+      <div
+        className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+        style={{ animationDelay: "0.2s" }}
+      ></div>
     </div>
   </div>
 );
@@ -72,71 +79,73 @@ const Preview = () => {
   const videoLoadingRef = useRef(true);
 
   useEffect(() => {
-  if (!state) {
-    navigate("/dashboard");
-    return;
-  }
+    if (!state) {
+      navigate("/dashboard");
+      return;
+    }
 
-  setTextLoading(true);
-  setImageLoading(true);
-  setVideoLoading(true);
-  setIsGenerating(true);
+    setTextLoading(true);
+    setImageLoading(true);
+    setVideoLoading(true);
+    setIsGenerating(true);
 
-  const pollInterval = 5000; // every 5 seconds
-  const maxPollDuration = 15 * 60 * 1000; // 15 minutes
-  const startTime = Date.now();
+    const pollInterval = 5000; // every 5 seconds
+    const maxPollDuration = 15 * 60 * 1000; // 15 minutes
+    const startTime = Date.now();
 
-  const poll = async () => {
-    try {
-      const projectRes = await getSpecificProject(state.user_id, state.project_id);
-      const generated_outputs_id = projectRes.data.generated_outputs_id;
+    const poll = async () => {
+      try {
+        const projectRes = await getSpecificProject(
+          state.user_id,
+          state.project_id
+        );
+        const generated_outputs_id = projectRes.data.generated_outputs_id;
 
-      // 🔁 Retry if not yet ready
-      if (!generated_outputs_id) {
-        setTimeout(poll, pollInterval);
-        return;
+        // 🔁 Retry if not yet ready
+        if (!generated_outputs_id) {
+          setTimeout(poll, pollInterval);
+          return;
+        }
+
+        const outputRes = await getGeneratedOutput(generated_outputs_id);
+        const { text, image, video } = outputRes.data;
+
+        if (text) {
+          setTextOutput(text);
+          setTextLoading(false);
+        }
+
+        if (image) {
+          const imageUrl = getGeneratedImageURL(image);
+          setImageURL(imageUrl);
+          setImageLoading(false);
+        }
+
+        if (video) {
+          setVideoURL(video);
+          setVideoLoading(false);
+        }
+
+        const done = !!text || !!image || !!video;
+        if (done) {
+          setIsGenerating(false);
+        } else {
+          setTimeout(poll, pollInterval);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+        setTimeout(poll, pollInterval); // Retry on error
       }
 
-      const outputRes = await getGeneratedOutput(generated_outputs_id);
-      const { text, image, video } = outputRes.data;
-
-      if (text) {
-        setTextOutput(text);
-        setTextLoading(false);
-      }
-
-      if (image) {
-        const imageUrl = getGeneratedImageURL(image);
-        setImageURL(imageUrl);
-        setImageLoading(false);
-      }
-
-      if (video) {
-        setVideoURL(video);
-        setVideoLoading(false);
-      }
-
-      const done = !!text || !!image || !!video;
-      if (done) {
+      // Optional: Abort if polling exceeds 15 mins
+      if (Date.now() - startTime > maxPollDuration) {
+        console.warn("Polling exceeded maximum duration. Stopping.");
         setIsGenerating(false);
-      } else {
-        setTimeout(poll, pollInterval);
       }
-    } catch (err) {
-      console.error("Polling error:", err);
-      setTimeout(poll, pollInterval); // Retry on error
-    }
+    };
 
-    // Optional: Abort if polling exceeds 15 mins
-    if (Date.now() - startTime > maxPollDuration) {
-      console.warn("Polling exceeded maximum duration. Stopping.");
-      setIsGenerating(false);
-    }
-  };
-
-  poll();
-}, [state, navigate]);
-
+    poll();
+  }, [state, navigate]);
 
   const handleEditText = () => {
     navigate(`/editor`, {
@@ -167,7 +176,8 @@ const Preview = () => {
   const showTextSection = Boolean(textOutput);
   const showImageSection = Boolean(imageURL);
   const showVideoSection = Boolean(videoURL);
-  const hasGeneratedContent = showTextSection || showImageSection || showVideoSection;
+  const hasGeneratedContent =
+    showTextSection || showImageSection || showVideoSection;
 
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-purple-200 via-pink-100 to-indigo-100 font-sans p-6 overflow-auto">
@@ -225,15 +235,16 @@ const Preview = () => {
               <h3 className="text-2xl font-semibold text-gray-800 mb-6 px-10">
                 Generated Content
               </h3>
-              
+
               {/* Grid layout for text and image if both exist */}
               {(showTextSection || showImageSection) && (
-                <div className={`grid gap-10 px-10 ${
-                  showTextSection && showImageSection 
-                    ? 'grid-cols-1 lg:grid-cols-2' 
-                    : 'grid-cols-1'
-                }`}>
-                  
+                <div
+                  className={`grid gap-10 px-10 ${
+                    showTextSection && showImageSection
+                      ? "grid-cols-1 lg:grid-cols-2"
+                      : "grid-cols-1"
+                  }`}
+                >
                   {/* Image Section - Only show if image exists or is loading */}
                   {showImageSection && (
                     <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
@@ -283,52 +294,51 @@ const Preview = () => {
                       </CardContent>
                     </Card>
                   )}
-
-                  {/* Text Section - Only show if text exists or is loading */}
-                  {showTextSection && (
-                    <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          Text Output
-                        </CardTitle>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleEditText}
-                            className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
-                            disabled={!textOutput}
-                          >
-                            <Edit3 className="w-4 h-4" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(textOutput);
-                            }}
-                            className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                            disabled={!textOutput}
-                          >
-                            <Copy className="w-4 h-4" />
-                            Copy Text
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="h-80 overflow-y-auto">
-                        {textOutput ? (
-                          <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
-                            {textOutput}
-                          </div>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>
               )}
 
+              {/* Text Section - Only show if text exists or is loading */}
+              {showTextSection && (
+                <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Text Output
+                    </CardTitle>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditText}
+                        className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                        disabled={!textOutput}
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(textOutput);
+                        }}
+                        className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                        disabled={!textOutput}
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy Text
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="h-80 overflow-y-auto">
+                    {textOutput ? (
+                      <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
+                        {textOutput}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              )}
               {/* Video Section - Only show if video exists or is loading */}
               {showVideoSection && (
                 <div className="mt-10 px-10">
