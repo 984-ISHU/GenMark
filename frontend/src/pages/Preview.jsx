@@ -34,10 +34,10 @@ const GeneratingLoader = () => (
     </div>
 
     <div className="text-center space-y-2">
-      <h3 className="text-2xl font-semibold text-gray-800">
+      <h3 className="text-2xl font-semibold text-white">
         🎨 Generating Your Content...
       </h3>
-      <p className="text-gray-600 max-w-md">
+      <p className="text-white max-w-md">
         Our AI is crafting your marketing materials. This may take a few
         moments.
       </p>

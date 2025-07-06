@@ -41,7 +41,7 @@ const emailTemplates = [
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
         <h1 style="color: #333; text-align: center;">{projectName}</h1>
-        <img src="{imageURL}" alt="Generated Image" style="max-width: 100%; height: auto; margin: 20px 0;" />
+        <img src="{imageURL}" alt="Generated Image" style="width: 100%; height: auto; margin: 20px 0;" />
         <div style="background-color: white; padding: 20px; border-radius: 8px;">
           <p style="color: #333; line-height: 1.6;">Hey {name},</p>
           <p style="color: #333; line-height: 1.6;">{textOutput}</p>
@@ -74,7 +74,7 @@ const emailTemplates = [
     id: "template3",
     name: "Bold Marketing",
     html: `
-      <div style="font-family: Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background-color: #1e90ff; color: white;">
+      <div style="font-family: Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #1e90ff; color: white;">
         <h1 style="text-align: center; font-size: 28px; text-transform: uppercase;">{projectName}</h1>
         <img src="{imageURL}" alt="Generated Image" style="width: 100%; border-radius: 10px; margin: 20px 0;" />
         <div style="background-color: rgba(255,255,255,0.9); color: #333; padding: 20px; border-radius: 10px;">
@@ -88,7 +88,68 @@ const emailTemplates = [
       </div>
     `,
   },
+  {
+    id: "template4",
+    name: "Elegant Promo",
+    html: `
+      <div style="max-width: 600px; margin: auto; font-family: 'Segoe UI', sans-serif; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background: linear-gradient(to right, #6366f1, #3b82f6); padding: 20px; text-align: center; color: white;">
+          <h1 style="margin: 0;">{projectName}</h1>
+        </div>
+        <img src="{imageURL}" alt="Image" style="width: 100%; display: block;" />
+        <div style="padding: 20px;">
+          <p style="margin: 0 0 10px 0; font-size: 16px; color: #333;">Hi {name},</p>
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #333;">{textOutput}</p>
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="{productURL}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Explore Now</a>
+          </div>
+        </div>
+        <div style="background: #f9fafb; text-align: center; padding: 16px; font-size: 12px; color: #888;">Sent with ❤️ by GenMark</div>
+      </div>
+    `,
+  },
+  {
+    id: "template5",
+    name: "Sleek Card",
+    html: `
+      <div style="font-family: Roboto, sans-serif; max-width: 600px; margin: auto; background: #ffffff; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="color: #111827; font-size: 24px; margin-bottom: 10px;">{projectName}</h2>
+        <img src="{imageURL}" alt="Visual" style="width: 100%; border-radius: 8px; margin: 20px 0;" />
+        <p style="color: #374151; font-size: 15px;">Hello {name},</p>
+        <p style="color: #374151; font-size: 15px;">{textOutput}</p>
+        <div style="margin: 25px 0; text-align: center;">
+          <a href="{productURL}" style="padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 5px;">View Details</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+        <p style="font-size: 12px; color: #6b7280; text-align: center;">© 2025 GenMark. All rights reserved.</p>
+      </div>
+    `,
+  },
+  {
+    id: "template6",
+    name: "Dark Mode Feature",
+    html: `
+      <div style="max-width: 600px; margin: auto; background: #111827; color: #f9fafb; font-family: 'Helvetica Neue', sans-serif; border-radius: 10px; overflow: hidden;">
+        <div style="padding: 24px; text-align: center;">
+          <h1 style="margin-bottom: 10px;">{projectName}</h1>
+          <p style="color: #9ca3af; font-size: 14px;">New release just for you</p>
+        </div>
+        <img src="{imageURL}" alt="Generated" style="width: 100%; display: block;" />
+        <div style="padding: 24px;">
+          <p style="font-size: 16px;">Hi {name},</p>
+          <p style="font-size: 16px;">{textOutput}</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="{productURL}" style="background: #3b82f6; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block;">Try It Now</a>
+          </div>
+        </div>
+        <div style="background: #1f2937; padding: 16px; text-align: center; font-size: 12px; color: #9ca3af;">
+          Crafted by GenMark • Unsubscribe anytime
+        </div>
+      </div>
+    `,
+  }
 ];
+
 
 const Automation = () => {
   const location = useLocation();
@@ -280,13 +341,37 @@ const Automation = () => {
     );
   };
 
+  const handleSaveDataset = async () => {
+    try {
+      const response = await fetch(
+        "https://genmark-mzoy.onrender.com/api/datasets/save-filtered-head",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: state.user_id,
+            project_id: state.project_id,
+            rows: datasetHead,
+          }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to save updates");
+      showToast("Dataset saved successfully!", 'success');
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to save dataset", 'error');
+    }
+  };
+
   if (!state) return null;
 
   const name = capitalizeName(state.name);
   const projectName = state.projectName;
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-200 via-pink-100 to-indigo-100 font-sans p-6 overflow-auto">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans">
       {/* Toast */}
       {toast && (
         <Toast
@@ -296,92 +381,52 @@ const Automation = () => {
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
-            GenMark
-          </h1>
-          <p className="text-purple-600 font-medium mt-2">
-            Project: {projectName}
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <button
-            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
-            onClick={() => navigate("/dashboard")}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-          <button
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
-            onClick={() => navigate("/preview", { state })}
-          >
-            Back to Preview
-          </button>
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 mb-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">
+                GenMark
+              </h1>
+              <p className="text-purple-400 font-medium mt-2">Project: {projectName}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div
+                className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/30 transition-colors"
+                onClick={() => navigate("/dashboard")}
+              >
+                <ArrowLeft className="w-4 h-4 text-white" />
+                <span className="text-white font-medium text-sm sm:text-base">
+                  Back to Dashboard
+                </span>
+              </div>
+
+              <button
+                onClick={() => navigate("/preview", { state })}
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
+              >
+                Back to Automation
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Product URL Display */}
-      {!productLoading && productURL && (
-        <div className="mb-8 max-w-4xl mx-auto">
-          <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold text-purple-700">
-                Product URL
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-mono text-sm text-gray-800 break-all">{productURL}</p>
-                </div>
-                <button
-                  onClick={() => window.open(productURL, '_blank')}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-                >
-                  Visit
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                This URL will be included in your email templates as a call-to-action button.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {productLoading && (
-        <div className="mb-8 max-w-4xl mx-auto">
-          <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold text-purple-700">
-                Product URL
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="animate-pulse bg-gray-300 h-4 w-3/4 rounded"></div>
-                <div className="animate-pulse bg-gray-300 h-8 w-16 rounded"></div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Loading product URL...
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Greeting */}
-      <div className="mb-10 text-center">
-        <h2 className="text-3xl font-semibold text-gray-800">
-          🎉 Hey {name}, automate your email campaign for{" "}
-          <span className="text-purple-700 font-bold">{projectName}</span>!
-        </h2>
-        <p className="text-gray-600 mt-2">
-          Preview and send your AI-generated marketing emails below.
-        </p>
+      <div className="px-6 lg:px-10 mb-10">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-6 shadow-md border border-white/20 text-center">
+          <h2 className="text-3xl font-semibold text-white">
+            🎉 Hey {capitalizeName(name || "User")}, here's your
+            generated content for{" "}
+            <span className="text-purple-300 font-bold">
+              {projectName}
+            </span>
+            !
+          </h2>
+          <p className="text-purple-100 mt-2 text-sm">
+            Review and customize your AI-generated assets below.
+          </p>
+        </div>
       </div>
 
       {/* Email Preview Section */}
@@ -389,7 +434,7 @@ const Automation = () => {
         <div className="relative flex items-center justify-center">
           <Button
             onClick={handlePreviousTemplate}
-            className="bg-purple-600 text-white hover:bg-purple-700 rounded-full p-2 absolute left-4 z-10"
+            className="bg-white text-gray-900 hover:bg-white-800 rounded-full p-2 absolute left-20 z-10"
           >
             <ChevronLeft className="w-6 h-6" />
           </Button>
@@ -456,114 +501,116 @@ const Automation = () => {
           </div>
           <Button
             onClick={handleNextTemplate}
-            className="bg-purple-600 text-white hover:bg-purple-700 rounded-full p-2 absolute right-4 z-10"
+            className="bg-white text-gray-900 hover:bg-white-800 rounded-full p-2 absolute right-20 z-10"
           >
             <ChevronRight className="w-6 h-6" />
           </Button>
         </div>
       </div>
 
+      {/* Dataset Section - List Format */}
       {!isDatasetLoading && datasetHead.length > 0 && (
-        <div className="bg-white p-6 rounded-xl shadow-md max-w-4xl mx-auto mb-10">
-          <h3 className="text-xl font-semibold text-purple-700 mb-4">
-            Preview & Edit Dataset
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="table-auto w-full border border-gray-300 rounded-lg">
-              <thead className="bg-purple-100">
-                <tr>
-                  {Object.keys(datasetHead[0]).map((col) => (
-                    <th
-                      key={col}
-                      className="px-4 py-2 text-left text-sm font-semibold text-gray-700"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {datasetHead.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="border-b">
-                    {Object.entries(row).map(([key, value], colIndex) => (
-                      <td
-                        key={colIndex}
-                        className={`px-4 py-2 align-top ${
-                          key === "Email"
-                            ? "w-[600px] max-w-[800px]"
-                            : "break-words"
-                        }`}
-                      >
-                        {key === "Email" ? (
-                          <input
-                            type="text"
-                            value={value}
-                            onChange={(e) => {
-                              const updated = [...datasetHead];
-                              updated[rowIndex][key] = e.target.value;
-                              setDatasetHead(updated);
-                            }}
-                            className="w-full font-mono text-sm px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-800"
-                            style={{ minWidth: "300px" }}
-                          />
-                        ) : key === "Name" ? (
-                          capitalizeName(value)
-                        ) : (
-                          value
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="px-6 lg:px-10 mb-10 flex justify-center">
+          <div className="w-1/2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-purple-200 overflow-hidden">
+            {/* Header with Save Button */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-white">
+                  Email Recipients
+                </h3>
+                <p className="text-purple-100 text-sm mt-1">
+                  * you can replace these names & mails with others for testing
+                </p>
+              </div>
+              <Button
+                onClick={handleSaveDataset}
+                className="bg-white/20 hover:bg-white/30 text-white font-medium py-2 px-6 rounded-lg border border-white/30 transition-all duration-200"
+              >
+                Save Changes
+              </Button>
+            </div>
+
+            {/* Recipients List */}
+            <div className="p-6">
+  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+    {datasetHead.map((user, index) => (
+      <div
+        key={index}
+        className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* User ID */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              User ID
+            </label>
+            <div className="text-sm font-mono text-gray-800 bg-gray-50 px-3 py-2 rounded">
+              {user.user_id || `User ${index + 1}`}
+            </div>
           </div>
-          <div className="flex justify-end mt-4">
-            <Button
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded"
-              onClick={async () => {
-                try {
-                  const response = await fetch(
-                    "https://genmark-mzoy.onrender.com/api/datasets/save-filtered-head",
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        user_id: state.user_id,
-                        project_id: state.project_id,
-                        rows: datasetHead,
-                      }),
-                    }
-                  );
-                  if (!response.ok) throw new Error("Failed to save updates");
-                  showToast("Dataset saved successfully!", 'success');
-                } catch (err) {
-                  console.error(err);
-                  showToast("Failed to save dataset", 'error');
-                }
+
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              Name
+            </label>
+            <input
+              type="text"
+              value={user.Name || ""}
+              onChange={(e) => {
+                const updated = [...datasetHead];
+                updated[index].Name = e.target.value;
+                setDatasetHead(updated);
               }}
-            >
-              Save Changes
-            </Button>
+              className="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Enter name"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={user.Email || ""}
+              onChange={(e) => {
+                const updated = [...datasetHead];
+                updated[index].Email = e.target.value;
+                setDatasetHead(updated);
+              }}
+              className="w-full text-sm font-mono px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Enter email address"
+            />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
           </div>
         </div>
       )}
 
       {/* Send Email Button */}
-      <div className="flex justify-center mt-8">
+      <div className="flex justify-center pb-10">
         <Button
           onClick={handleSendEmail}
           disabled={
             isSending || textLoading || imageLoading || !textOutput || !imageURL
           }
-          className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold py-3 px-8 rounded-3xl shadow-md hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+          className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold py-3 px-8 rounded-3xl shadow-lg hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
         >
           <Mail className="w-5 h-5" />
           {isSending ? "Sending..." : "Send Email"}
         </Button>
       </div>
+      <footer className="bg-white/10 backdrop-blur-sm text-center text-sm text-white p-8">
+        <div className="container mx-auto px-4">
+          <p>&copy; 2025 GenMark. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };

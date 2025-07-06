@@ -414,7 +414,7 @@ const Project = () => {
                 value={price}
                 min="0"
                 step="0.01"
-                className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                className="w-full p-3 bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition appearance-none"
                 onChange={(e) => setPrice(e.target.value)}
               />
             </div>
