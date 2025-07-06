@@ -9,6 +9,7 @@ import {
   ArrowDownToLine,
   Copy,
   Mail,
+  Check,
   Loader2,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -17,6 +18,12 @@ import {
   getGeneratedOutput,
   getGeneratedImageURL,
 } from "@/lib/api";
+
+// Helper function to capitalize first letter
+const capitalizeFirstLetter = (str) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 
 // Enhanced loading component for generation state
 const GeneratingLoader = () => (
@@ -68,19 +75,6 @@ const GeneratingLoader = () => (
   </div>
 );
 
-// Simple loading bar component for individual sections
-const LoadingBar = ({ color = "indigo", label }) => (
-  <div className="flex flex-col items-center justify-center w-full py-8">
-    <div className={`w-48 h-3 bg-gray-200 rounded-full overflow-hidden`}>
-      <div
-        className={`h-3 rounded-full animate-pulse bg-${color}-600`}
-        style={{ width: "70%" }}
-      ></div>
-    </div>
-    <p className={`mt-2 text-${color}-600 font-semibold`}>{label}</p>
-  </div>
-);
-
 const Preview = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,6 +91,13 @@ const Preview = () => {
   const textLoadingRef = useRef(true);
   const imageLoadingRef = useRef(true);
   const videoLoadingRef = useRef(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(textOutput);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500); // Reset after 1.5s
+  };
 
   useEffect(() => {
     if (!state) {
@@ -200,224 +201,219 @@ const Preview = () => {
     showTextSection || showImageSection || showVideoSection;
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-200 via-pink-100 to-indigo-100 font-sans p-6 overflow-auto">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans">
       {/* Header - Always visible */}
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
-            GenMark
-          </h1>
-          <p className="text-purple-600 font-medium mt-2">
-            Project: {projectName}
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <button
-            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
-            onClick={() => navigate("/dashboard")}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-          <button
-            className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
-            onClick={() => navigate("/automation", { state })}
-          >
-            <Mail className="w-4 h-4" />
-            Go to Automation
-          </button>
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 mb-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">
+                GenMark
+              </h1>
+              <p className="text-purple-600 font-medium mt-2">{projectName}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div
+                className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/30 transition-colors"
+                onClick={() => navigate("/dashboard")}
+              >
+                <ArrowLeft className="w-4 h-4 text-white" />
+                <span className="text-white font-medium text-sm sm:text-base">
+                  Back to Dashboard
+                </span>
+              </div>
+
+              <button
+                onClick={() => navigate("/automation", { state })}
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
+              >
+                Go to Automation
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Body - Conditional based on generation state */}
-      {isGenerating ? (
-        // Show loading state while generating
-        <div className="flex-1">
-          <GeneratingLoader />
-        </div>
-      ) : (
-        // Show content sections after generation is complete
-        <>
-          {/* Greeting - Only show after generation */}
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-semibold text-gray-800">
-              🎉 Hey {name}, here's your generated content for{" "}
-              <span className="text-purple-700 font-bold">{projectName}</span>!
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Review and edit your AI-generated marketing outputs below.
-            </p>
+      <div className="transform scale-[0.8] origin-top">
+        {isGenerating ? (
+          // Show loading state while generating
+          <div className="flex-1">
+            <GeneratingLoader />
           </div>
+        ) : (
+          // Show content sections after generation is complete
+          <>
+            {/* Greeting - Only show after generation */}
+            <div className="px-6 lg:px-10 mb-10">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-6 shadow-md border border-white/20 text-center">
+                <h2 className="text-3xl font-semibold text-white">
+                  🎉 Hey {capitalizeFirstLetter(name || "User")}, here’s your
+                  generated content for{" "}
+                  <span className="text-purple-300 font-bold">
+                    {projectName}
+                  </span>
+                  !
+                </h2>
+                <p className="text-purple-100 mt-2 text-sm">
+                  Review and customize your AI-generated assets below.
+                </p>
+              </div>
+            </div>
 
-          {/* Content Sections - Only show relevant sections */}
-          {hasGeneratedContent && (
-            <div className="mb-12">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-6 px-10">
-                Generated Content
-              </h3>
+            {/* Content Sections - Only show relevant sections */}
+            {hasGeneratedContent && (
+              <div className="mb-16">
+                <h3 className="text-2xl font-semibold text-white mb-6 px-6 lg:px-10">
+                  🎯 Your AI-Generated Results
+                </h3>
 
-              {/* Grid layout for text and image if both exist */}
-              {(showTextSection || showImageSection) && (
-                <div
-                  className={`grid gap-10 px-10 ${
-                    showTextSection && showImageSection
-                      ? "grid-cols-1 lg:grid-cols-2"
-                      : "grid-cols-1"
-                  }`}
-                >
-                  {/* Image Section - Only show if image exists or is loading */}
-                  {showImageSection && (
-                    <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl overflow-hidden">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
-                          <Image className="w-5 h-5" />
-                          Image Output
-                        </CardTitle>
-                        <div className="grid grid-cols-2 gap-2">
+                {/* Video + Image Grid */}
+                {(showVideoSection || showImageSection) && (
+                  <div
+                    className={`grid gap-6 px-6 lg:px-10 ${
+                      showVideoSection && showImageSection
+                        ? "grid-cols-1 sm:grid-cols-2"
+                        : "grid-cols-1"
+                    }`}
+                  >
+                    {/* Video Section */}
+                    {showVideoSection && (
+                      <Card className="bg-[rgb(216,205,255)] border border-purple-200 shadow-xl rounded-2xl">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
+                            🎥 Video Output
+                          </CardTitle>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleEditImage}
-                            className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                            disabled={!imageURL}
-                          >
-                            <Edit3 className="w-4 h-4" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
                             onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = imageURL;
-                              link.download = "generated-image.png";
-                              link.click();
+                              window.open(videoURL, "_blank");
                             }}
-                            className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                            disabled={!imageURL}
+                            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
+                            disabled={!videoURL}
                           >
                             <ArrowDownToLine className="w-4 h-4" />
                             Download
                           </Button>
+                        </CardHeader>
+                        <CardContent className="flex justify-center items-center pt-6 pb-4">
+                          <video
+                            controls
+                            src={videoURL}
+                            className="rounded-xl w-full h-auto max-h-[400px]"
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Image Section */}
+                    {showImageSection && (
+                      <Card className="bg-[rgb(216,205,255)] border border-purple-200 shadow-xl rounded-2xl overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                            <Image className="w-5 h-5" />
+                            Image Output
+                          </CardTitle>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              onClick={handleEditImage}
+                              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center"
+                              disabled={!imageURL}
+                            >
+                              <Edit3 className="w-4 h-4" />
+                              Edit
+                            </Button>
+
+                            <Button
+                              onClick={() => {
+                                const link = document.createElement("a");
+                                link.href = imageURL;
+                                link.target = "_blank";
+                                link.download = "generated-image.png";
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                              className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
+                              disabled={!imageURL}
+                            >
+                              <ArrowDownToLine className="w-4 h-4" />
+                              Download
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex justify-center items-center pt-6 pb-4">
+                          <img
+                            alt="Generated"
+                            src={imageURL}
+                            className="rounded-xl w-full h-auto max-h-[400px] object-contain"
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {/* Text Section */}
+                {showTextSection && (
+                  <div className="mt-10 px-6 lg:px-10">
+                    <Card className="bg-[rgb(216,205,255)] border border-purple-200 shadow-xl rounded-2xl">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                          <FileText className="w-5 h-5" />
+                          Text Output
+                        </CardTitle>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            onClick={handleEditText}
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center"
+                            disabled={!textOutput}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            Edit
+                          </Button>
+
+                          <Button
+                            onClick={handleCopy}
+                            className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
+                            disabled={!textOutput}
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="w-4 h-4 animate-bounce" />
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                Copy
+                              </>
+                            )}
+                          </Button>
                         </div>
                       </CardHeader>
-                      <CardContent className="flex justify-center items-center pt-10">
-                        {imageURL ? (
-                          <div className="w-auto max-w-full">
-                            <img
-                              alt="Generated"
-                              src={imageURL}
-                              className="rounded-xl max-w-full max-h-[600px] object-contain"
-                            />
-                          </div>
-                        ) : null}
+                      <CardContent className="max-h-[320px] overflow-y-auto">
+                        <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full">
+                          {textOutput}
+                        </div>
                       </CardContent>
                     </Card>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            )}
 
-              {/* Text Section - Only show if text exists or is loading */}
-              {showTextSection && (
-                <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Text Output
-                    </CardTitle>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleEditText}
-                        className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
-                        disabled={!textOutput}
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(textOutput);
-                        }}
-                        className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                        disabled={!textOutput}
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copy Text
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="h-80 overflow-y-auto">
-                    {textOutput ? (
-                      <div className="p-4 text-gray-800 whitespace-pre-wrap text-sm bg-indigo-50 rounded-lg border border-indigo-100 h-full overflow-y-auto">
-                        {textOutput}
-                      </div>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              )}
-              {/* Video Section - Only show if video exists or is loading */}
-              {showVideoSection && (
-                <div className="mt-10 px-10">
-                  <Card className="bg-white/90 border border-green-300 shadow-lg rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-lg font-bold text-green-700 flex items-center gap-2">
-                        🎥 Video Output
-                      </CardTitle>
-                      <div className="grid grid-cols-1 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = videoURL;
-                            link.download = "generated-video.mp4";
-                            link.click();
-                          }}
-                          className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-                          disabled={!videoURL}
-                        >
-                          <ArrowDownToLine className="w-4 h-4" />
-                          Download
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex justify-center items-center pt-6">
-                      {videoURL ? (
-                        <video
-                          controls
-                          src={videoURL}
-                          className="rounded-xl max-w-full max-h-[600px]"
-                        />
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+            {/* Action Buttons - Only show after generation */}
+            <div className="flex justify-center gap-4 mt-8">
+              <Button
+                onClick={() => navigate(`/editor`, { state })}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-3xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
+              >
+                <Edit3 className="w-5 h-5" />
+                Open Editor
+              </Button>
             </div>
-          )}
-
-          {/* Action Buttons - Only show after generation */}
-          <div className="flex justify-center gap-4 mt-8">
-            <Button
-              onClick={() => navigate(`/editor`, { state })}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-3xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
-            >
-              <Edit3 className="w-5 h-5" />
-              Open Editor
-            </Button>
-            <Button
-              onClick={() => window.location.reload()}
-              className="bg-gray-200 text-gray-800 font-semibold py-3 px-8 rounded-3xl shadow-md hover:bg-gray-300 transition-all duration-200 flex items-center gap-2"
-            >
-              Refresh
-            </Button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

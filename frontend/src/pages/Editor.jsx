@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   FileText,
   Wand2,
   Copy,
+  Check,
   Download,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -27,10 +29,6 @@ import {
   deleteEditedImage,
 } from "@/lib/api";
 
-// Add these API functions to your api.js file:
-// export const editOutput = (payload) => API.post("/edit_output", payload);
-// export const saveOutput = (payload) => API.post("/save_output", payload);
-
 const Editor = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,6 +40,7 @@ const Editor = () => {
   const [originalText, setOriginalText] = useState("");
   const [originalImageId, setOriginalImageId] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [copied, setCopied] = useState(false);
 
   // UI state
   const [activeTab, setActiveTab] = useState("text");
@@ -159,7 +158,7 @@ const Editor = () => {
 
       // Reload image from local `EditImage.jpg`
       const response = await fetch(
-        "https://genmark-mzoy.onrender.com/api/edit/edited/image",
+        "http://127.0.0.1:8000/api/edit/edited/image",
         { cache: "no-store" }
       );
       // prevent stale image caching
@@ -200,7 +199,6 @@ const Editor = () => {
       // 2. Try uploading image if EditImage.jpg exists
       try {
         const blob = await getEditedImage(); // ⛔ will throw if not found
-
         const imageFormData = new FormData();
         imageFormData.append(
           "image_output",
@@ -216,6 +214,9 @@ const Editor = () => {
         console.log("⚠️ No edited image found. Skipping image upload.");
       }
 
+      await deleteEditedImage();
+      toast.success("Changes saved successfully!"); // ✅ TOAST ADDED
+
       // 3. Navigate back to preview
       navigate("/preview", {
         state: {
@@ -224,18 +225,18 @@ const Editor = () => {
           currentImageURL: imageURL,
         },
       });
-
-      await deleteEditedImage();
     } catch (error) {
       console.error("❌ Error saving changes:", error);
-      alert("Failed to save changes. Please try again.");
+      toast.error("Failed to save changes. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCopyText = () => {
+  const handleCopy = () => {
     navigator.clipboard.writeText(textOutput);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500); // Reset after 1.5s
   };
 
   const handleDownloadImage = () => {
@@ -247,81 +248,114 @@ const Editor = () => {
     }
   };
 
-  const handleResetToOriginal = () => {
-    if (activeTab === "text") {
-      setTextOutput(originalText);
-    } else {
-      // For images, we'd need to keep track of original image ID
-      // This is a simplified reset - in production you might want to store original image separately
-      loadProjectData();
-    }
-  };
-
   if (!state) return null;
 
   const { name, projectName } = state;
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-200 via-pink-100 to-indigo-100 font-sans p-6 overflow-auto">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-extrabold text-purple-700 tracking-tight">
-            GenMark Editor
-          </h1>
-          <p className="text-purple-600 font-medium mt-2">
-            Editing: {projectName}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={async () => {
-              try {
-                const response = await deleteEditedImage();
-                if (response.ok) {
-                  console.log("🗑️ Edited image deleted on back navigation.");
-                } else {
-                  console.warn("⚠️ Edited image not found or already deleted.");
-                }
-              } catch (err) {
-                console.error("❌ Error deleting edited image:", err);
-              }
 
-              navigate("/preview", { state });
-            }}
-            variant="outline"
-            className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Preview
-          </Button>
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 mb-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white tracking-tight">
+                GenMark
+              </h1>
+              <p className="text-purple-600 font-medium mt-2">{projectName}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => {
+                  toast.custom((t) => (
+                    <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white p-4 rounded-xl shadow-lg w-[300px] space-y-3">
+                      <p className="text-base font-semibold">Are you sure?</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        You have unsaved changes. Go back without saving?
+                      </p>
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button
+                          onClick={() => toast.dismiss(t)}
+                          className="text-sm font-medium px-4 py-1.5 rounded-md bg-purple-100 text-purple-700 hover:bg-purple-200 transition"
+                        >
+                          Cancel
+                        </button>
 
-          <Button
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-2 px-6 rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-2"
-          >
-            {isSaving ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Save Changes
-          </Button>
+                        <button
+                          onClick={async () => {
+                            toast.dismiss(t);
+                            try {
+                              const response = await deleteEditedImage();
+                              if (!response.ok) {
+                                console.warn(
+                                  "⚠️ Edited image not found or already deleted."
+                                );
+                              }
+                            } catch (err) {
+                              console.error(
+                                "❌ Error deleting edited image:",
+                                err
+                              );
+                            }
+                            navigate("/preview", { state });
+                          }}
+                          className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
+                        >
+                          Go Back
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                }}
+                className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 hover:bg-white/30 transition-colors text-white text-sm sm:text-base"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Preview
+              </Button>
+
+              <Button
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-2.5 px-6 rounded-full shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-2 text-sm sm:text-base"
+              >
+                {isSaving ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="text" className="flex items-center gap-2">
+          <TabsList className="grid grid-cols-2 w-full mb-8 gap-2 bg-transparent">
+            <TabsTrigger
+              value="text"
+              className="rounded-full py-2.5 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200
+    flex items-center justify-center gap-2
+    bg-white/5 hover:bg-white/10 text-white/80
+    data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600
+    data-[state=active]:text-white"
+            >
               <FileText className="w-4 h-4" />
-              Text Editor
+              <span className="hidden sm:inline">Text Editor</span>
             </TabsTrigger>
-            <TabsTrigger value="image" className="flex items-center gap-2">
+            <TabsTrigger
+              value="image"
+              className="rounded-full py-2.5 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200
+    flex items-center justify-center gap-2
+    bg-white/5 hover:bg-white/10 text-white/80
+    data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600
+    data-[state=active]:text-white"
+            >
               <ImageIcon className="w-4 h-4" />
-              Image Editor
+              <span className="hidden sm:inline">Image Editor</span>
             </TabsTrigger>
           </TabsList>
 
@@ -329,30 +363,27 @@ const Editor = () => {
           <TabsContent value="text" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Text Content */}
-              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-3xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
+                  <CardTitle className="text-lg font-semibold text-indigo-700 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
                     Current Text
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyText}
-                      className="flex items-center gap-2 text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                      onClick={handleCopy}
+                      className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-3xl shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200 flex items-center gap-2"
+                      disabled={!textOutput}
                     >
-                      <Copy className="w-4 h-4" />
-                      Copy
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResetToOriginal}
-                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Reset
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4 animate-bounce" />
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
@@ -361,16 +392,16 @@ const Editor = () => {
                     value={textOutput}
                     onChange={(e) => setTextOutput(e.target.value)}
                     placeholder="Generated text will appear here..."
-                    className="h-full resize-none border-indigo-200 focus:border-indigo-400 focus:ring-indigo-300"
+                    className="h-full resize-none border-indigo-200 focus:border-indigo-400 focus:ring-indigo-300 text-sm"
                     disabled={isLoading}
                   />
                 </CardContent>
               </Card>
 
               {/* Text Edit Controls */}
-              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
+              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-3xl">
                 <CardHeader>
-                  <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
+                  <CardTitle className="text-lg font-semibold text-purple-700 flex items-center gap-2">
                     <Wand2 className="w-5 h-5" />
                     AI Text Editor
                   </CardTitle>
@@ -388,10 +419,11 @@ const Editor = () => {
                       disabled={isEditing}
                     />
                   </div>
+
                   <Button
                     onClick={handleEditContentText}
                     disabled={isEditing || !instruction.trim()}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-full shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
                     {isEditing ? (
                       <>
@@ -407,51 +439,40 @@ const Editor = () => {
                   </Button>
 
                   {/* Quick Actions */}
-                  <div className="border-t pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
+                  {/* Quick Actions */}
+                  <div className="border-t border-purple-200 pt-5">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">
                       Quick Actions:
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction("Make it more professional and formal")
-                        }
-                        className="text-xs"
-                      >
-                        Make Professional
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction("Add emojis and make it more engaging")
-                        }
-                        className="text-xs"
-                      >
-                        Add Emojis
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction("Make it shorter and more concise")
-                        }
-                        className="text-xs"
-                      >
-                        Make Shorter
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction("Make it longer with more details")
-                        }
-                        className="text-xs"
-                      >
-                        Add Details
-                      </Button>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        {
+                          label: "🎓 Professional",
+                          prompt: "Make it more professional and formal",
+                        },
+                        {
+                          label: "😄 Add Emojis",
+                          prompt: "Add emojis and make it more engaging",
+                        },
+                        {
+                          label: "✂️ Shorten",
+                          prompt: "Make it shorter and more concise",
+                        },
+                        {
+                          label: "🧾 Expand",
+                          prompt: "Make it longer with more details",
+                        },
+                      ].map(({ label, prompt }, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInstruction(prompt)}
+                          className="text-xs sm:text-sm rounded-full border border-purple-300 bg-white text-purple-700 hover:bg-purple-50 transition duration-200 px-4 py-2 shadow-sm"
+                        >
+                          {label}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -463,7 +484,7 @@ const Editor = () => {
           <TabsContent value="image" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Image Content */}
-              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-2xl">
+              <Card className="bg-white/90 border border-purple-300 shadow-lg rounded-3xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-bold text-purple-700 flex items-center gap-2">
                     <ImageIcon className="w-5 h-5" />
@@ -479,15 +500,6 @@ const Editor = () => {
                     >
                       <Download className="w-4 h-4" />
                       Download
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResetToOriginal}
-                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Reset
                     </Button>
                   </div>
                 </CardHeader>
@@ -515,7 +527,7 @@ const Editor = () => {
               </Card>
 
               {/* Image Edit Controls */}
-              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-2xl">
+              <Card className="bg-white/90 border border-indigo-300 shadow-lg rounded-3xl">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold text-indigo-700 flex items-center gap-2">
                     <Wand2 className="w-5 h-5" />
@@ -538,7 +550,7 @@ const Editor = () => {
                   <Button
                     onClick={handleEditContentImage}
                     disabled={isEditing || !instruction.trim() || !imageURL}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-full shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     {isEditing ? (
                       <>
@@ -554,57 +566,39 @@ const Editor = () => {
                   </Button>
 
                   {/* Quick Actions */}
-                  <div className="border-t pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
+                  <div className="border-t border-purple-200 pt-5">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">
                       Quick Actions:
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction(
-                            "Make the image brighter and more vibrant"
-                          )
-                        }
-                        className="text-xs"
-                      >
-                        Brighten
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction("Add a professional clean background")
-                        }
-                        className="text-xs"
-                      >
-                        Clean Background
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction(
-                            "Add text overlay with the product name"
-                          )
-                        }
-                        className="text-xs"
-                      >
-                        Add Text
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setInstruction(
-                            "Change the style to be more modern and minimalist"
-                          )
-                        }
-                        className="text-xs"
-                      >
-                        Modern Style
-                      </Button>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                      {[
+                        {
+                          label: "✨ Brighten",
+                          prompt: "Make the image brighter and more vibrant",
+                        },
+                        {
+                          label: "🧼 Clean Background",
+                          prompt: "Add a professional clean background",
+                        },
+                        {
+                          label: "📝 Add Text",
+                          prompt: "Add text overlay with the product name",
+                        },
+                        {
+                          label: "🎨 Modern Style",
+                          prompt:
+                            "Change the style to be more modern and minimalist",
+                        },
+                      ].map(({ label, prompt }, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          onClick={() => setInstruction(prompt)}
+                          className="rounded-full border border-purple-300 bg-white text-purple-700 hover:bg-purple-50 transition duration-200 px-4 py-2 text-xs sm:text-sm shadow-sm"
+                        >
+                          {label}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
