@@ -2,7 +2,11 @@ from fastapi import FastAPI
 from app.routes import project, dataset, user, generatedoutput, send_email, edit_output
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,       # disables /docs (Swagger UI)
+    redoc_url=None,      # disables /redoc (ReDoc documentation)
+    openapi_url=None     # disables /openapi.json (OpenAPI schema endpoint)
+)
 
 origins = [
     "https://gen-mark.vercel.app",  # ✅ Your deployed frontend
