@@ -2,13 +2,14 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://genmark-mzoy.onrender.com/api",
+  baseURL: "http://127.0.0.1:8000/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
 // ============ USER API ============
 export const registerUser = (payload) => API.post("/user/register", payload);
 export const loginUser = (payload) => API.post("/user/login", payload);
+export const getAllUsers = (user_id) => API.get(`/user/${user_id}`);
 export const getUserProfile = () => API.get("/user/profile");
 export const getUserByUsername = (username) =>
   API.get(`/user/userdetails/by-username?username=${username}`);
@@ -19,6 +20,9 @@ export const updateUsername = (payload) =>
 export const changePassword = (payload) =>
   API.post("/user/change-password", payload);
 export const logoutUser = () => API.post("/user/logout");
+
+export const addSharedUsers = (projectId, users) =>
+  API.post(`/user/shared/${projectId}`, { selected_users: users });
 
 // ============ DATASET API ============
 export const getDatasets = () => API.get("/datasets/");
@@ -52,7 +56,7 @@ export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `https://genmark-mzoy.onrender.com/api/generated_output/image/${image_id}`;
+  `http://127.0.0.1:8000/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
@@ -62,6 +66,9 @@ export const getSpecificProject = (user_id, project_id) =>
 
 export const getAllUserProjects = (user_id) =>
   API.get(`/project/all/${user_id}`);
+
+export const getAllUserSharedProjects = (user_id) =>
+  API.get(`/user/shared/${user_id}`);
 
 // Get single project details
 export const getProject = (projectId) => API.get(`/project/${projectId}`);
@@ -109,7 +116,7 @@ export const editImageRequest = (
 };
 
 export const getEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/edited/image", {
     cache: "no-store",
   }).then((res) => {
     if (!res.ok) throw new Error("No edited image found");
@@ -117,7 +124,7 @@ export const getEditedImage = () =>
   });
 
 export const deleteEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/delete/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/delete/edited/image", {
     method: "DELETE",
   });
 

@@ -8,16 +8,19 @@ import {
   Database,
   User,
   Calendar,
-  FileText,
+  UserPlus,
   X,
   Loader2,
-  Home
+  Home,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthContext";
 import {
+  addSharedUsers,
+  getAllUsers,
   getUserProfile,
   getAllUserProjects,
+  getAllUserSharedProjects,
   getUserDatasets,
   deleteProject,
   deleteDataset,
@@ -30,15 +33,25 @@ const Dashboard = () => {
   const { user: contextUser } = useAuth();
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [sharedProjects, setSharedProjects] = useState([]);
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [sharedProjectsLoading, setSharedProjectsLoading] = useState(false);
   const [datasetsLoading, setDatasetsLoading] = useState(false);
 
   // New Project State
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [creatingProject, setCreatingProject] = useState(false);
+
+  //Add Shared User State
+  const [showAddSharedUserModal, setAddSharedUserModal] = useState(false);
+  const [addingSharedUser, setAddingSharedUser] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedDropdownUser, setSelectedDropdownUser] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   // New Dataset State
   const [showNewDatasetModal, setShowNewDatasetModal] = useState(false);
@@ -51,6 +64,18 @@ const Dashboard = () => {
     if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
+
+  //For Adding Shared Users
+  // Correct: Waits until user.id is available
+  useEffect(() => {
+    if (!user?.id) return;
+
+    getAllUsers(user.id)
+      .then((res) => {
+        setAllUsers(res.data);
+      })
+      .catch(() => toast.error("Failed to fetch users"));
+  }, [user?.id]);
 
   // Initialize user data and fetch data
   useEffect(() => {
@@ -86,7 +111,6 @@ const Dashboard = () => {
         setUser(response.data);
         localStorage.setItem("user", JSON.stringify(response.data));
         setLoading(false);
-        
       } catch (error) {
         console.error("Error initializing user:", error);
         toast.error("Failed to load user profile");
@@ -102,10 +126,14 @@ const Dashboard = () => {
     const fetchData = async () => {
       if (user?.id) {
         console.log("Fetching data for user:", user.id);
-        await Promise.all([fetchProjects(), fetchDatasets()]);
+        await Promise.all([
+          fetchProjects(),
+          fetchDatasets(),
+          fetchSharedProjects(),
+        ]);
       }
     };
-    
+
     fetchData();
   }, [user]);
 
@@ -117,7 +145,7 @@ const Dashboard = () => {
     }
 
     console.log("Fetching projects for user ID:", user.id);
-    setProjectsLoading(true);
+    setSharedProjectsLoading(true);
     try {
       const response = await getAllUserProjects(user.id);
       console.log("Projects response:", response.data);
@@ -128,6 +156,28 @@ const Dashboard = () => {
       setProjects([]);
     } finally {
       setProjectsLoading(false);
+    }
+  };
+
+  // Fetch user's shared projects
+  const fetchSharedProjects = async () => {
+    if (!user?.id) {
+      console.warn("No user ID available for fetching projects");
+      return;
+    }
+
+    console.log("Fetching Shared projects for user ID:", user.id);
+    setProjectsLoading(true);
+    try {
+      const response = await getAllUserSharedProjects(user.id);
+      console.log("Projects response:", response.data);
+      setSharedProjects(response.data || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to fetch projects");
+      setSharedProjects([]);
+    } finally {
+      setSharedProjectsLoading(false);
     }
   };
 
@@ -144,15 +194,17 @@ const Dashboard = () => {
       const response = await getUserDatasets(user.id);
       console.log("Datasets response:", response.data);
       const allDatasets = response.data || [];
-      
+
       // Filter datasets for current user
-      const userDatasets = allDatasets.filter(dataset => {
-        return dataset.user_id === user.id || 
-               dataset.user_id === user.username || 
-               dataset.created_by === user.id || 
-               dataset.created_by === user.username;
+      const userDatasets = allDatasets.filter((dataset) => {
+        return (
+          dataset.user_id === user.id ||
+          dataset.user_id === user.username ||
+          dataset.created_by === user.id ||
+          dataset.created_by === user.username
+        );
       });
-      
+
       console.log("Filtered user datasets:", userDatasets);
       setDatasets(userDatasets);
     } catch (error) {
@@ -186,9 +238,88 @@ const Dashboard = () => {
     }
   };
 
+  const handleAddUser = () => {
+    if (!selectedDropdownUser) return;
+
+    if (selectedUsers.includes(selectedDropdownUser)) {
+      toast.warning("User already added");
+      return;
+    }
+
+    setSelectedUsers([...selectedUsers, selectedDropdownUser]);
+  };
+
+  const handleRemoveUser = (usernameToRemove) => {
+    setSelectedUsers(selectedUsers.filter((u) => u !== usernameToRemove));
+  };
+
+  // Add Shared Users
+  const handleAddSharedUser = async () => {
+    if (selectedUsers.length === 0) {
+      toast.error("No selected users");
+      return;
+    }
+
+    if (!selectedProjectId) {
+      toast.error("No project selected");
+      return;
+    }
+
+    console.log("All Users:", allUsers);
+    console.log(selectedUsers);
+
+    const userIdsToSend = selectedUsers
+      .map((username) => {
+        const user = allUsers.find((u) => u.username === username);
+        return user?.user_id;
+      })
+      .filter(Boolean);
+
+    console.log("User IDs to Send:", userIdsToSend);
+
+    setAddingSharedUser(true);
+    try {
+      const res = await addSharedUsers(selectedProjectId, userIdsToSend);
+
+      const { added, already_shared } = res.data;
+
+      // Map user IDs returned by backend to usernames
+      const idToUsernameMap = {};
+      allUsers.forEach((user) => {
+        idToUsernameMap[user.user_id] = user.username;
+      });
+
+      const addedUsernames = added
+        .map((id) => idToUsernameMap[id])
+        .filter(Boolean);
+      const alreadySharedUsernames = already_shared
+        .map((id) => idToUsernameMap[id])
+        .filter(Boolean);
+
+      if (addedUsernames.length > 0) {
+        toast.success(`Added: ${addedUsernames.join(", ")}`);
+      }
+
+      if (alreadySharedUsernames.length > 0) {
+        toast.warning(
+          `Already shared with: ${alreadySharedUsernames.join(", ")}`
+        );
+      }
+
+      setAddSharedUserModal(false);
+      setSelectedUsers([]);
+      setSelectedProjectId(null);
+    } catch (error) {
+      console.error("Error adding shared users:", error);
+      toast.error("Failed to add users");
+    } finally {
+      setAddingSharedUser(false);
+    }
+  };
+
   // Handle Enter key press for project creation
   const handleProjectKeyPress = (e) => {
-    if (e.key === 'Enter' && !creatingProject && newProjectName.trim()) {
+    if (e.key === "Enter" && !creatingProject && newProjectName.trim()) {
       handleCreateProject();
     }
   };
@@ -253,7 +384,12 @@ const Dashboard = () => {
 
   // Handle Enter key press for dataset creation
   const handleDatasetKeyPress = (e) => {
-    if (e.key === 'Enter' && !uploadingDataset && newDatasetName.trim() && datasetFile) {
+    if (
+      e.key === "Enter" &&
+      !uploadingDataset &&
+      newDatasetName.trim() &&
+      datasetFile
+    ) {
       handleUploadDataset();
     }
   };
@@ -304,13 +440,13 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-            <div 
-              className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/30 transition-colors"
-              onClick={() => navigate('/')}
-            >
-              <Home className="w-5 h-5 text-white" />
-              <span className="text-white font-medium">Home</span>
-            </div>
+              <div
+                className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/30 transition-colors"
+                onClick={() => navigate("/")}
+              >
+                <Home className="w-5 h-5 text-white" />
+                <span className="text-white font-medium">Home</span>
+              </div>
               <button
                 onClick={() => navigate("/profile")}
                 className="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all duration-200"
@@ -331,7 +467,9 @@ const Dashboard = () => {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-purple-700">
-                Welcome back, {capitalizeFirstLetter(user?.username || user?.name || "User")}! 👋
+                Welcome back,{" "}
+                {capitalizeFirstLetter(user?.username || user?.name || "User")}!
+                👋
               </h2>
               <p className="text-gray-600 mt-1">
                 Ready to create amazing marketing content?
@@ -402,6 +540,16 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setAddSharedUserModal(true);
+                              setSelectedProjectId(project.id || project._id);
+                            }}
+                            className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                          </button>
+
                           <button
                             onClick={() => {
                               localStorage.setItem("ProjectName", project.name);
@@ -507,6 +655,78 @@ const Dashboard = () => {
               )}
             </div>
           </div>
+
+          {/* Shared Projects Section */}
+          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FolderOpen className="w-8 h-8 text-white" />
+                  <h3 className="text-2xl font-bold text-white">
+                    Shared Projects
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {sharedProjectsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                </div>
+              ) : sharedProjects.length === 0 ? (
+                <div className="text-center py-8">
+                  <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">No projects yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {sharedProjects.map((project) => (
+                    <div
+                      key={project.id || project._id}
+                      className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-200 hover:shadow-lg transition-shadow"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-gray-800 mb-1">
+                            {project.name}
+                          </h4>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              {project.created_at
+                                ? new Date(
+                                    project.created_at
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              localStorage.setItem("ProjectName", project.name);
+                              navigate("/preview", {
+                                state: {
+                                  name: user.username,
+                                  user_id: user.id,
+                                  projectName: project.name,
+                                  project_id: project.id || project._id,
+                                },
+                              });
+                            }}
+                            className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -564,6 +784,101 @@ const Dashboard = () => {
                     setNewProjectName("");
                   }}
                   disabled={creatingProject}
+                  className="px-6 py-3 border border-gray-300 text-gray-400 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Shared Users Modal */}
+      {showAddSharedUserModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">
+                Add Shared Users
+              </h3>
+              <button
+                onClick={() => {
+                  setAddSharedUserModal(false);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Dropdown for Users */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select User
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="flex-1 px-4 py-2 border rounded-lg"
+                    value={selectedDropdownUser}
+                    onChange={(e) => setSelectedDropdownUser(e.target.value)}
+                  >
+                    <option value="">Select User</option>
+                    {allUsers.map((user, index) => (
+                      <option key={index} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddUser}
+                    className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Display Selected Users */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedUsers.map((userId) => {
+                  const user = allUsers.find((u) => u.id === userId);
+                  return (
+                    <span
+                      key={userId}
+                      className="flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm"
+                    >
+                      {user?.username || userId}
+                      <X
+                        className="w-4 h-4 cursor-pointer"
+                        onClick={() => handleRemoveUser(userId)}
+                      />
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Create Project Button */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleAddSharedUser}
+                  disabled={selectedUsers.length === 0}
+                  className="flex-1  bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {addingSharedUser ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Plus className="w-5 h-5" />
+                  )}
+                  {addingSharedUser ? "Adding..." : "Add Users"}
+                </button>
+                <button
+                  onClick={() => {
+                    setAddSharedUserModal(false);
+                  }}
+                  disabled={addingSharedUser}
                   className="px-6 py-3 border border-gray-300 text-gray-400 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
