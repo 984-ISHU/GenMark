@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Response, status, Request
 from pydantic import BaseModel, EmailStr, validator
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from passlib.context import CryptContext
-from typing import Optional
+from typing import Optional, List
+from bson import ObjectId
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 import os
@@ -14,6 +15,44 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+
+
+def clean_mongo_doc(doc):
+    cleaned = {}
+    for key, value in doc.items():
+        if isinstance(value, ObjectId):
+            cleaned[key] = str(value)
+        elif isinstance(value, datetime):
+            cleaned[key] = value.isoformat()
+        elif key == "shared" and isinstance(value, list):
+            # Convert ObjectId list to string list
+            cleaned[key] = [str(uid) for uid in value]
+        else:
+            cleaned[key] = value
+    return cleaned
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_username_from_token(token: str):
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+        return username
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+class SharedUsersRequest(BaseModel):
+    selected_users: List[str]
 
 class RegisterUser(BaseModel):
     username: str
@@ -62,23 +101,27 @@ class ChangePassword(BaseModel):
 class TokenData(BaseModel):
     sub: Optional[str] = None
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_username_from_token(token: str):
-    if not token:
-        raise HTTPException(status_code=401, detail="No token provided")
+@router.get("/{user_id}")
+async def get_all_usernames(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token payload")
-        return username
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        object_id = ObjectId(user_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    # Exclude the user with the given _id and include both _id and username
+    cursor = db["Users"].find(
+        {"_id": {"$ne": object_id}},
+        {"username": 1}  # keep _id included by default
+    )
+    users = await cursor.to_list(length=None)
+
+    # Return list of {username, user_id}
+    return [
+        {"username": user["username"], "user_id": str(user["_id"])}
+        for user in users if "username" in user
+    ]
+
 
 @router.post("/register")
 async def register_user(payload: RegisterUser, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -95,7 +138,8 @@ async def register_user(payload: RegisterUser, db: AsyncIOMotorDatabase = Depend
         "username": payload.username,
         "email": payload.email,
         "password": pwd_context.hash(payload.password),
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        "shared_projects": []
     }
 
     result = await db["Users"].insert_one(user_dict)
@@ -231,6 +275,92 @@ async def change_password(payload: ChangePassword, request: Request, db: AsyncIO
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"message": "Password updated successfully"}
+
+@router.post("/shared/{project_id}")
+async def update_users_shared_projects(
+    request: SharedUsersRequest,
+    project_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    selected_users = request.selected_users  # This contains user_ids (as strings)
+    print("Selected Users:", selected_users)
+
+    print("Finding Projects")
+    project = await db["Projects"].find_one({"_id": ObjectId(project_id)})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    print("Found Project\n")
+
+    # Get existing shared users list once
+    existing_project_shared_users = project.get("shared", [])
+
+    already_shared_users = []
+    newly_shared_users = []
+
+    for user_id_str in selected_users:
+        try:
+            user_id = ObjectId(user_id_str)
+        except Exception:
+            continue  # Skip invalid ObjectId
+
+        user = await db["Users"].find_one({"_id": user_id})
+        if not user:
+            continue  # Skip if user doesn't exist
+
+        print("User with ID", user_id_str, "found")
+
+        user_shared_projects = user.get("shared_projects", [])
+
+        # Update Users Collection
+        if ObjectId(project_id) not in user_shared_projects:
+            user_shared_projects.append(ObjectId(project_id))
+            await db["Users"].update_one(
+                {"_id": user_id},
+                {"$set": {"shared_projects": user_shared_projects}}
+            )
+
+        # Update Projects Collection only if not already shared
+        if user_id not in existing_project_shared_users:
+            await db["Projects"].update_one(
+                {"_id": ObjectId(project_id)},
+                {"$addToSet": {"shared": user_id}}  # Mongo handles uniqueness
+            )
+            newly_shared_users.append(str(user_id))
+        else:
+            already_shared_users.append(str(user_id))
+
+    return {
+        "message": "Processed shared users",
+        "added": newly_shared_users,
+        "already_shared": already_shared_users
+    }
+
+
+
+@router.get("/shared/{user_id}")
+async def get_shared_project_ids(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    user = await db["Users"].find_one({
+        "_id" : ObjectId(user_id)
+    })
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User Not Found")
+    
+    project_ids = user.get("shared_projects")
+    projects = []
+
+    for project_id in project_ids:
+        project = await db["Projects"].find_one({
+            "_id" : project_id
+        })
+
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found from shared projects")
+        
+        projects.append(clean_mongo_doc(project))
+
+    return projects
 
 @router.post("/logout")
 async def logout_user(response: Response):

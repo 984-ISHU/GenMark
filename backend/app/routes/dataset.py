@@ -147,7 +147,7 @@ async def filter_dataset_by_target_audience(
 
     file_id = dataset.get("file_id")
     if not file_id:
-        raise HTTPException(status_code=400, detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
 
     # Load the original CSV
     grid_in = await grid_fs.open_download_stream(file_id)
@@ -191,7 +191,8 @@ async def filter_dataset_by_target_audience(
         "file_id": filtered_file_id,
         "target": parsed,
         "original_dataset": dataset_name,
-        "filtered_count": len(df)
+        "filtered_count": len(df),
+        "shared": []
     })
 
     return {"detail": "Stored in GridFS", "filtered_count": len(df)}

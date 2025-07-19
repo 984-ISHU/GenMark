@@ -27,11 +27,20 @@ async def upsert_generated_output(db, project_id, update_fields):
             **update_fields
         })
 
-def convert_object_ids(doc):
+
+def clean_mongo_doc(doc):
+    cleaned = {}
     for key, value in doc.items():
         if isinstance(value, ObjectId):
-            doc[key] = str(value)
-    return doc
+            cleaned[key] = str(value)
+        elif isinstance(value, datetime):
+            cleaned[key] = value.isoformat()
+        elif key == "shared" and isinstance(value, list):
+            # Convert ObjectId list to string list
+            cleaned[key] = [str(uid) for uid in value]
+        else:
+            cleaned[key] = value
+    return cleaned
 
 async def fetch_product_image_ids(product_id: str, db: AsyncIOMotorDatabase) -> list:
     product = await db["Products"].find_one({"_id": ObjectId(product_id)})
@@ -47,6 +56,9 @@ def clean_mongo_doc(doc):
             cleaned[key] = str(value)
         elif isinstance(value, datetime):
             cleaned[key] = value.isoformat()
+        elif key == "shared" and isinstance(value, list):
+            # Convert ObjectId list to string list
+            cleaned[key] = [str(uid) for uid in value]
         else:
             cleaned[key] = value
     return cleaned
@@ -108,7 +120,8 @@ async def create_project_and_product(
         "product_id": ObjectId(product_result.inserted_id),
         "generated_outputs_id": None,
         "status": "in_progress",
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        "shared": []
     }
     
     project_result = await db["Projects"].insert_one(project_doc)
@@ -234,12 +247,19 @@ async def get_all_projects(db: AsyncIOMotorDatabase = Depends(get_database)):
 
 
 
-
 @router.get("/all/{user_id}")
 async def get_all_user_projects(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
+    try:
+        user_obj_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
     projects = []
-    async for p in db["Projects"].find({"user_id":ObjectId(user_id)}):
-        projects.append(clean_mongo_doc(p))
+    async for p in db["Projects"].find({
+        "user_id": user_obj_id
+    }):
+        projects.append(clean_mongo_doc(p))  # Assumes clean_mongo_doc handles ObjectId to str
+
     return projects
 
 
@@ -249,17 +269,20 @@ async def get_all_user_projects(user_id: str, db: AsyncIOMotorDatabase = Depends
 
 @router.get("/{user_id}/{project_id}")
 async def get_specific_project(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
-    print("User ID:", user_id)
-    print("Project ID:", project_id)
+
+    # Try to find project either owned by user or shared with user
     project = await db["Projects"].find_one({
-        "user_id": ObjectId(user_id),
-        "_id": ObjectId(project_id)
+        "_id": ObjectId(project_id),
+        "$or": [
+            {"user_id": ObjectId(user_id)},
+            {"shared": {"$in": [ObjectId(user_id)]}}
+        ]
     })
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not Found")
 
-    return convert_object_ids(project)
+    return clean_mongo_doc(project)
 
 @router.get("/products/{user_id}/{project_id}/")
 async def get_specific_product(user_id: str, project_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -273,7 +296,7 @@ async def get_specific_product(user_id: str, project_id: str, db: AsyncIOMotorDa
     if not project:
         raise HTTPException(status_code=404, detail="Product not Found")
 
-    return convert_object_ids(project)
+    return clean_mongo_doc(project)
 
 
 
