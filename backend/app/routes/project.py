@@ -84,20 +84,24 @@ async def create_project_and_product(
     print("Trying")
     print("Name", name)
     print("Product Name", product_name)
+    print("Marketing Product Name: ",name)
+    print("Product Name to be sole: ",product_name)
     exists = await db["Projects"].find_one({"name": name})
     exists2 = await db["Products"].find_one({"product_name": product_name})
     if exists or exists2:
         raise HTTPException(status_code=404, detail="Product or Project already exists")
-
+    print("Test1")
     
     # Upload images
     product_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="ProductImageBucket")
     image_ids = []
+    print("Test2")
     for img in product_images:
         content = await img.read()
         file_id = await product_bucket.upload_from_stream(img.filename, content)
         image_ids.append(str(file_id))
 
+    print("Test3")
     # Insert product
     product_doc = {
         "name": product_name,
@@ -108,7 +112,9 @@ async def create_project_and_product(
         "images": image_ids,
         "project_id": None
     }
+    print("Test4")
     product_result = await db["Products"].insert_one(product_doc)
+    print("Test5")
 
     # Insert project
     project_doc = {
@@ -123,8 +129,9 @@ async def create_project_and_product(
         "created_at": datetime.utcnow(),
         "shared": []
     }
-    
+    print("Test6")
     project_result = await db["Projects"].insert_one(project_doc)
+    print("Test7")
     project_id = project_result.inserted_id 
     print("\n\nProject ID After inserting : ", project_id)
 
@@ -456,6 +463,19 @@ async def delete_project(project_id: str, db: AsyncIOMotorDatabase = Depends(get
                 print("Deleted product metadata.")
         except Exception as e:
             print("Error deleting product:", e)
+
+    # === Remove this project from each user's shared_projects array ===
+    shared_users = project.get("shared", [])
+    if shared_users:
+        for user_id in shared_users:
+            try:
+                await db["Users"].update_one(
+                    {"_id": ObjectId(user_id)},
+                    {"$pull": {"shared_projects": ObjectId(project_id)}}
+                )
+                print(f"Removed project {project_id} from user {user_id}'s shared_projects.")
+            except Exception as e:
+                print(f"Error updating user {user_id}: {e}")
 
     # === Finally delete the Project ===
     await db["Projects"].delete_one({"_id": ObjectId(project_id)})

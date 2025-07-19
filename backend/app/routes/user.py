@@ -102,6 +102,22 @@ class TokenData(BaseModel):
     sub: Optional[str] = None
 
 
+@router.get("/profile")
+async def get_profile(request: Request, db: AsyncIOMotorDatabase = Depends(get_database)):
+    token = request.cookies.get("access_token")
+    username = get_username_from_token(token)
+    user = await db["Users"].find_one({"username": username})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return user data with ID included
+    return {
+        "id": str(user["_id"]),  # Include user ID
+        "username": user["username"], 
+        "email": user["email"],
+        "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None
+    }
+
 @router.get("/{user_id}")
 async def get_all_usernames(user_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     try:
@@ -199,21 +215,7 @@ async def get_userdetails_by_email(email: EmailStr, db: AsyncIOMotorDatabase = D
         user["created_at"] = user["created_at"].isoformat()
     return user
 
-@router.get("/profile")
-async def get_profile(request: Request, db: AsyncIOMotorDatabase = Depends(get_database)):
-    token = request.cookies.get("access_token")
-    username = get_username_from_token(token)
-    user = await db["Users"].find_one({"username": username})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Return user data with ID included
-    return {
-        "id": str(user["_id"]),  # Include user ID
-        "username": user["username"], 
-        "email": user["email"],
-        "created_at": user.get("created_at", "").isoformat() if user.get("created_at") else None
-    }
+
 
 @router.post("/update-username")
 async def update_username(payload: UpdateUsername, request: Request, db: AsyncIOMotorDatabase = Depends(get_database)):
@@ -289,8 +291,23 @@ async def update_users_shared_projects(
     project = await db["Projects"].find_one({"_id": ObjectId(project_id)})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-
+    
     print("Found Project\n")
+
+
+
+    filtered_dataset_id = project.get("filtered_dataset_id")    
+    if filtered_dataset_id is None:
+        raise HTTPException(status_code=404, detail = "Filtered Dataset ID not Found")
+    
+    print("Finding Filtered Dataset")
+    filtered_dataset = await db["FilteredDataset"].find_one({"_id": filtered_dataset_id})
+    if not filtered_dataset:
+        raise HTTPException(status_code=404, detail="Filtered Dataset not found")
+    
+
+    existing_filtereddataset_shared_users = filtered_dataset.get("shared", [])
+
 
     # Get existing shared users list once
     existing_project_shared_users = project.get("shared", [])
@@ -329,6 +346,14 @@ async def update_users_shared_projects(
             newly_shared_users.append(str(user_id))
         else:
             already_shared_users.append(str(user_id))
+
+        # Update Filtered Dataset Collection only if not already shared
+        if user_id not in existing_filtereddataset_shared_users:
+            await db["FilteredDataset"].update_one(
+                {"project_id": ObjectId(project_id)},
+                {"$addToSet": {"shared": user_id}}  # Mongo handles uniqueness
+            )
+        
 
     return {
         "message": "Processed shared users",

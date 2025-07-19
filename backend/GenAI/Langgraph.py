@@ -140,12 +140,14 @@ def generate_prompt(state: AgentState) -> dict:
     }
 
     try:
+        print("Inside Sending creating prompt")
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
             json=data,
             timeout=45
         )
+        print("Response of the request to Groq: ",response)
         response.raise_for_status()
         try:
             result = response.json()["choices"][0]["message"]["content"]

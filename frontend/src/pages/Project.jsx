@@ -409,15 +409,16 @@ const Project = () => {
     }
 
     return (
-      <div className="relative space-y-2">
+      <div className=" relative space-y-2">
         <div className="flex items-center justify-center space-x-2">
           <Button
             onClick={handlePrevProduct}
             size="icon"
             variant="ghost"
             disabled={productDatasetContent.length <= 1}
+            className="bg-purple-200"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className=" h-6 w-6" />
           </Button>
           <div className="flex-grow text-center overflow-hidden w-full">
             <div className="bg-purple-100 rounded-lg p-2 flex flex-col items-center gap-2">
@@ -442,6 +443,7 @@ const Project = () => {
             size="icon"
             variant="ghost"
             disabled={productDatasetContent.length <= 1}
+            className="bg-purple-200"
           >
             <ChevronRight className="h-6 w-6" />
           </Button>

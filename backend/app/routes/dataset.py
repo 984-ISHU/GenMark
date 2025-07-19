@@ -204,8 +204,11 @@ async def get_filtered_dataset(user_id: str, project_id: str, db: AsyncIOMotorDa
     project_obj_id = to_object_id(project_id, "project_id")
 
     filtered_doc = await db["FilteredDataset"].find_one({
-        "user_id": user_obj_id,
-        "project_id": project_obj_id
+        "project_id": project_obj_id,
+        "$or": [
+            {"user_id": user_obj_id},
+            {"shared": {"$in": [user_obj_id]}}
+        ]
     })
     if not filtered_doc:
         raise HTTPException(status_code=404, detail="Filtered dataset not found")
@@ -235,8 +238,11 @@ async def save_filtered_dataset_head(
 
     # Find the filtered dataset document
     filtered_doc = await db["FilteredDataset"].find_one({
-        "user_id": user_obj_id,
-        "project_id": project_obj_id
+        "project_id": project_obj_id,
+        "$or": [
+            {"user_id": user_obj_id},
+            {"shared": {"$in": [user_obj_id]}}
+        ]
     })
     if not filtered_doc:
         raise HTTPException(status_code=404, detail="Filtered dataset not found")

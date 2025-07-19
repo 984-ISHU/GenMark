@@ -954,7 +954,7 @@ const Dashboard = () => {
                   onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyPress={handleProjectKeyPress}
                   placeholder="Enter project name..."
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   disabled={creatingProject}
                 />
               </div>
