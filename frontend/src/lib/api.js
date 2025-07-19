@@ -50,6 +50,24 @@ export const uploadDataset = (formData) =>
     },
   });
 
+// ============ PRODUCT DATASET API ============
+export const getProductDatasets = () => API.get("/products_datasets/");
+export const getUserProductDatasets = (user_id) => API.get(`/products_datasets/${user_id}`);
+
+export const getProductDataset = (datasetId) => API.get(`/products_datasets/${datasetId}`);
+export const deleteProductDataset = (datasetId) =>
+  API.delete(`/products_datasets/${datasetId}`);
+
+// Upload dataset (multipart form data)
+export const uploadProductDataset = (formData) =>
+  API.post("/products_datasets/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+export const getProductDatasetContent = (datasetId) => API.get(`/products_datasets/${datasetId}/content`);
+
 // ============ Generated Output API ============
 
 export const getGeneratedOutput = (generated_output_id) =>

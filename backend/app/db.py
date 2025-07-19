@@ -14,6 +14,9 @@ def get_database():
 
 # Collections
 dataset_collection = db["Datasets"]
+product_dataset_collection = db["ProductsDataset"]
+project_collection = db["Projects"]
+product_collection = db["Products"]
 
 # GridFS bucket
 grid_fs = AsyncIOMotorGridFSBucket(db, "CSVDatasetBucket")
