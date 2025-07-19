@@ -14,6 +14,7 @@ import {
   Home,
 } from "lucide-react";
 import { toast } from "sonner";
+
 import { useAuth } from "../auth/AuthContext";
 import {
   addSharedUsers,
@@ -159,7 +160,7 @@ const Dashboard = () => {
     }
 
     console.log("Fetching projects for user ID:", user.id);
-    setSharedProjectsLoading(true);
+    setProjectsLoading(true);
     try {
       const response = await getAllUserProjects(user.id);
       console.log("Projects response:", response.data);
@@ -384,9 +385,14 @@ const Dashboard = () => {
     }
 
     try {
+      console.log("Deleting project...");
       await deleteProject(projectId);
       toast.success("Project deleted successfully");
-      await fetchProjects(); // Refresh projects list
+
+      await fetchSharedProjects();
+      console.log("Fetching user projects...");
+      await fetchProjects(); // Add logging here
+      console.log("Fetching shared projects...");
     } catch (error) {
       console.error("Error deleting project:", error);
       toast.error("Failed to delete project");
