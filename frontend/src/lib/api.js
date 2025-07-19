@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: "https://genmark-mzoy.onrender.com/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
@@ -74,7 +74,7 @@ export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `http://127.0.0.1:8000/api/generated_output/image/${image_id}`;
+  `https://genmark-mzoy.onrender.com/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
@@ -134,7 +134,7 @@ export const editImageRequest = (
 };
 
 export const getEditedImage = () =>
-  fetch("http://127.0.0.1:8000/api/edit/edited/image", {
+  fetch("https://genmark-mzoy.onrender.com/api/edit/edited/image", {
     cache: "no-store",
   }).then((res) => {
     if (!res.ok) throw new Error("No edited image found");
@@ -142,7 +142,7 @@ export const getEditedImage = () =>
   });
 
 export const deleteEditedImage = () =>
-  fetch("http://127.0.0.1:8000/api/edit/delete/edited/image", {
+  fetch("https://genmark-mzoy.onrender.com/api/edit/delete/edited/image", {
     method: "DELETE",
   });
 

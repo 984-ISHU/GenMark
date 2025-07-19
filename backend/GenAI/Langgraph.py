@@ -160,7 +160,7 @@ def text_agent(state: AgentState) -> dict:
         response = client.models.generate_content(model="gemini-2.5-flash", config=types.GenerateContentConfig(system_instruction=system_prompt), contents=text_prompt)
         generated_text = response.text.strip()
         print("✅ Text generation completed.")
-        api_url = f"http://127.0.0.1:8000/api/project/upload-generated-text/{project_id}"
+        api_url = f"https://genmark-mzoy.onrender.com/api/project/upload-generated-text/{project_id}"
         requests.put(api_url, data={"text": generated_text}, timeout=10)
         return {"text_output": generated_text}
     except Exception as e:
@@ -180,7 +180,7 @@ async def image_agent(state: dict) -> dict:
     ))]
     async with aiohttp.ClientSession() as session:
         for image_id in image_ids:
-            api_url = f"http://127.0.0.1:8000/api/project/uploaded/image/{image_id}"
+            api_url = f"https://genmark-mzoy.onrender.com/api/project/uploaded/image/{image_id}"
             async with session.get(api_url) as response:
                 if response.status == 200:
                     image_data = await response.read()
@@ -205,7 +205,7 @@ async def image_upload_agent(state: dict) -> dict:
     image_bytes, project_id, product_name = state.get("image_bytes"), state.get("project_id"), state.get("product_name")
     if not image_bytes or not project_id:
         return {"image_output": None}
-    api_url = f"http://127.0.0.1:8000/api/project/upload-generated-image/{project_id}"
+    api_url = f"https://genmark-mzoy.onrender.com/api/project/upload-generated-image/{project_id}"
     async with aiohttp.ClientSession() as session:
         data = aiohttp.FormData()
         data.add_field(name="image_output", value=image_bytes.getvalue(), filename=f"{product_name}.jpg", content_type="image/jpeg")
@@ -236,7 +236,7 @@ def video_agent(state: AgentState) -> dict:
                     video_url = post.get("generated_media", [{}])[0].get("url")
                     if video_url:
                         print("✅ Video generation completed.")
-                        upload_res = requests.put(f"http://127.0.0.1:8000//api/project/upload-generated-video/{project_id}", data={"video_output": video_url}, timeout=10)
+                        upload_res = requests.put(f"https://genmark-mzoy.onrender.com//api/project/upload-generated-video/{project_id}", data={"video_output": video_url}, timeout=10)
                         return {"video_output": video_url}
         return {"video_output": None}
     except Exception as e:

@@ -206,7 +206,7 @@ const Automation = () => {
     const fetchProductURL = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/api/project/products/${state.user_id}/${state.project_id}`
+          `https://genmark-mzoy.onrender.com/api/project/products/${state.user_id}/${state.project_id}`
         );
         if (response.ok) {
           const productData = await response.json();
@@ -307,7 +307,7 @@ const Automation = () => {
           .replace("{textOutput}", textOutput)
           .replace("{productURL}", productURL || "#");
 
-        const response = await fetch("http://127.0.0.1:8000/api/send-email", {
+        const response = await fetch("https://genmark-mzoy.onrender.com/api/send-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -355,7 +355,7 @@ const Automation = () => {
   const handleSaveDataset = async () => {
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/datasets/save-filtered-head",
+        "https://genmark-mzoy.onrender.com/api/datasets/save-filtered-head",
         {
           method: "POST",
           headers: {
