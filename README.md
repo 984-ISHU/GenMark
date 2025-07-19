@@ -66,7 +66,7 @@ _Live Demo: [https://gen-mark.vercel.app/](https://gen-mark.vercel.app/)_
 
 - Langgraph
 - LLMs:
-  - Gemini-2.5-flash
+  - Gemini-2.0-flash-preview-image-generation
   - llama-3.1-8B-instant
   - Predis-api
 - Pillow

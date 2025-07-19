@@ -803,7 +803,7 @@ const Project = () => {
       </div>
 
       {/* Generate Button */}
-      <div className="mt-8 flex flex-col items-center justify-center space-y-4">
+      <div className="flex flex-col items-center justify-center space-y-4">
         <Button
           onClick={handleGenerate}
           disabled={creating}
