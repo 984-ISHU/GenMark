@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://genmark-mzoy.onrender.com/api",
+  baseURL: "http://127.0.0.1:8000/api",
   withCredentials: true, // Important for cookie-based authentication
 });
 
@@ -46,13 +46,31 @@ export const uploadDataset = (formData) =>
     },
   });
 
+// ============ PRODUCT DATASET API ============
+export const getProductDatasets = () => API.get("/products_datasets/");
+export const getUserProductDatasets = (user_id) => API.get(`/products_datasets/${user_id}`);
+
+export const getProductDataset = (datasetId) => API.get(`/products_datasets/${datasetId}`);
+export const deleteProductDataset = (datasetId) =>
+  API.delete(`/products_datasets/${datasetId}`);
+
+// Upload dataset (multipart form data)
+export const uploadProductDataset = (formData) =>
+  API.post("/products_datasets/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+export const getProductDatasetContent = (datasetId) => API.get(`/products_datasets/${datasetId}/content`);
+
 // ============ Generated Output API ============
 
 export const getGeneratedOutput = (generated_output_id) =>
   API.get(`/generated_output/${generated_output_id}`);
 
 export const getGeneratedImageURL = (image_id) =>
-  `https://genmark-mzoy.onrender.com/api/generated_output/image/${image_id}`;
+  `http://127.0.0.1:8000/api/generated_output/image/${image_id}`;
 
 // ============ PROJECT API ============
 export const getAllProjects = () => API.get("/project/all");
@@ -109,7 +127,7 @@ export const editImageRequest = (
 };
 
 export const getEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/edited/image", {
     cache: "no-store",
   }).then((res) => {
     if (!res.ok) throw new Error("No edited image found");
@@ -117,7 +135,7 @@ export const getEditedImage = () =>
   });
 
 export const deleteEditedImage = () =>
-  fetch("https://genmark-mzoy.onrender.com/api/edit/delete/edited/image", {
+  fetch("http://127.0.0.1:8000/api/edit/delete/edited/image", {
     method: "DELETE",
   });
 

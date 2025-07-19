@@ -47,3 +47,9 @@ class Dataset(BaseModel):
     file_id: str
     categories: List[str]
     locations: List[str]
+
+# ---------- PRODUCTS DATASET ----------
+class ProductsDataset(BaseModel):
+    user_id: str
+    dataset_name: str
+    file_id: str

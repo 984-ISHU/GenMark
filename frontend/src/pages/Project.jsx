@@ -289,7 +289,7 @@ const Project = () => {
 
     try {
       const res = await axios.get(
-        `https://genmark-mzoy.onrender.com/scrape-product`,
+        `http://127.0.0.1:8000/scrape-product`,
         {
           params: { url: productUrl },
         }
