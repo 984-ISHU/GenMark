@@ -20,7 +20,7 @@
 
 ## 📖 About the Project
 
-GenMark (Generative Marketing) is an AI-powered advertising content creation and management platform designed for marketers, agencies, and organizations. Harnessing advanced GenAI and intelligent agents, GenMark enables users to effortlessly generate, organize, and deploy high-quality ad content across multiple channels. With secure authentication, intuitive dashboards, and support for diverse content types, GenMark streamlines the entire ad creation workflow—empowering companies and institutions to rapidly produce compelling campaigns and maximize their advertising impact while significantly reducing costs.
+GenMark (Generative Marketing) is an AI-powered advertising content creation and management platform designed for marketers, agencies, and organizations. Harnessing advanced GenAI and intelligent agents, GenMark enables users to effortlessly generate, collaborate, organize, and deploy high-quality ad content across multiple channels. With secure authentication, intuitive dashboards, and support for diverse content types, GenMark streamlines the entire ad creation workflow—empowering companies and institutions to rapidly produce compelling campaigns and maximize their advertising impact while significantly reducing costs.
 
 ---
 
@@ -39,6 +39,7 @@ _Live Demo: [https://gen-mark.vercel.app/](https://gen-mark.vercel.app/)_
 - One-click email ad distribution to target audiences
 - Various templates for rapid campaign launch
 - Clean, responsive UI for a smooth cross-device experience
+- Seamless Team Collaboration: Invite members, and co-create campaigns in a shared workspace.
 - Easily customize and edit generated content to meet user requirements
 
 ---
