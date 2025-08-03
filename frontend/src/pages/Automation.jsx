@@ -307,15 +307,18 @@ const Automation = () => {
           .replace("{textOutput}", textOutput)
           .replace("{productURL}", productURL || "#");
 
-        const response = await fetch("https://genmark-mzoy.onrender.com/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            subject: `GenMark: ${state.projectName}`,
-            html_body: html,
-            recipients: [recipientEmail],
-          }),
-        });
+        const response = await fetch(
+          "https://genmark-mzoy.onrender.com/api/send-email",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subject: `GenMark: ${state.projectName}`,
+              html_body: html,
+              recipients: [recipientEmail],
+            }),
+          }
+        );
 
         if (response.ok) {
           successCount++;

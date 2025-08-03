@@ -52,9 +52,11 @@ export const uploadDataset = (formData) =>
 
 // ============ PRODUCT DATASET API ============
 export const getProductDatasets = () => API.get("/products_datasets/");
-export const getUserProductDatasets = (user_id) => API.get(`/products_datasets/${user_id}`);
+export const getUserProductDatasets = (user_id) =>
+  API.get(`/products_datasets/${user_id}`);
 
-export const getProductDataset = (datasetId) => API.get(`/products_datasets/${datasetId}`);
+export const getProductDataset = (datasetId) =>
+  API.get(`/products_datasets/${datasetId}`);
 export const deleteProductDataset = (datasetId) =>
   API.delete(`/products_datasets/${datasetId}`);
 
@@ -66,7 +68,8 @@ export const uploadProductDataset = (formData) =>
     },
   });
 
-export const getProductDatasetContent = (datasetId) => API.get(`/products_datasets/${datasetId}/content`);
+export const getProductDatasetContent = (datasetId) =>
+  API.get(`/products_datasets/${datasetId}/content`);
 
 // ============ Generated Output API ============
 

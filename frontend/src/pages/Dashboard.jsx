@@ -57,7 +57,7 @@ const Dashboard = () => {
   const [addingSharedUser, setAddingSharedUser] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [selectedDropdownUser, setSelectedDropdownUser] = useState("");
+  const [selectedUser, setselectedUser] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   // New Dataset State - User DB
@@ -289,14 +289,23 @@ const Dashboard = () => {
   };
 
   const handleAddUser = () => {
-    if (!selectedDropdownUser) return;
+    if (!selectedUser) return;
 
-    if (selectedUsers.includes(selectedDropdownUser)) {
+    const foundUser = allUsers.find(
+      (user) => user.username === selectedUser.trim()
+    );
+
+    if (!foundUser) {
+      toast.warning("User does not exist");
+      return;
+    }
+
+    if (selectedUsers.includes(selectedUser)) {
       toast.warning("User already added");
       return;
     }
 
-    setSelectedUsers([...selectedUsers, selectedDropdownUser]);
+    setSelectedUsers([...selectedUsers, selectedUser]);
   };
 
   const handleRemoveUser = (usernameToRemove) => {
@@ -1014,21 +1023,16 @@ const Dashboard = () => {
               {/* Dropdown for Users */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select User
+                  Enter User
                 </label>
                 <div className="flex gap-2">
-                  <select
+                  <input
+                    type="text"
                     className="flex-1 px-4 py-2 border rounded-lg"
-                    value={selectedDropdownUser}
-                    onChange={(e) => setSelectedDropdownUser(e.target.value)}
-                  >
-                    <option value="">Select User</option>
-                    {allUsers.map((user, index) => (
-                      <option key={index} value={user.id}>
-                        {user.username}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Enter username"
+                    value={selectedUser}
+                    onChange={(e) => setselectedUser(e.target.value)}
+                  />
                   <button
                     type="button"
                     onClick={handleAddUser}
